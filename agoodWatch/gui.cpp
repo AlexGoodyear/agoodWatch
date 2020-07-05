@@ -17,8 +17,8 @@ Created by Lewis he on October 10, 2019.
 #include <WiFi.h>
 #include "string.h"
 #include <Ticker.h>
-#include "FS.h"
-#include "SD.h"
+//#include "FS.h"
+//#include "SD.h"
 
 #define RTC_TIME_ZONE   "GMT"
 
@@ -34,9 +34,9 @@ LV_IMG_DECLARE(step);
 LV_IMG_DECLARE(menu);
 
 LV_IMG_DECLARE(wifi);
-LV_IMG_DECLARE(light);
+//LV_IMG_DECLARE(light);
 LV_IMG_DECLARE(bluetooth);
-LV_IMG_DECLARE(sd);
+//LV_IMG_DECLARE(sd);
 LV_IMG_DECLARE(setting);
 LV_IMG_DECLARE(on);
 LV_IMG_DECLARE(off);
@@ -45,13 +45,14 @@ LV_IMG_DECLARE(level2);
 LV_IMG_DECLARE(level3);
 LV_IMG_DECLARE(iexit);
 LV_IMG_DECLARE(modules);
-LV_IMG_DECLARE(CAMERA_PNG);
+//LV_IMG_DECLARE(CAMERA_PNG);
 
 extern EventGroupHandle_t g_event_group;
 extern QueueHandle_t g_event_queue_handle;
 
 static lv_style_t settingStyle;
 static lv_obj_t *mainBar = nullptr;
+static lv_style_t mainStyle;
 static lv_obj_t *timeLabel = nullptr;
 static lv_obj_t *dateLabel = nullptr;
 static lv_obj_t *menuBtn = nullptr;
@@ -63,12 +64,12 @@ static void lv_battery_task(struct _lv_task_t *);
 static void view_event_handler(lv_obj_t *obj, lv_event_t event);
 
 static void wifi_event_cb();
-static void sd_event_cb();
+//static void sd_event_cb();
 static void setting_event_cb();
-static void light_event_cb();
+//static void light_event_cb();
 static void bluetooth_event_cb();
-static void modules_event_cb();
-static void camera_event_cb();
+static void about_event_cb();
+//static void camera_event_cb();
 static void wifi_destory();
 
 class StatusBar
@@ -305,14 +306,14 @@ private:
     int _count = 0;
 };
 
-MenuBar::lv_menu_config_t _cfg[7] = {
+MenuBar::lv_menu_config_t _cfg[4] = {
     {.name = "WiFi",  .img = (void *) &wifi, .event_cb = wifi_event_cb},
     {.name = "Bluetooth",  .img = (void *) &bluetooth, /*.event_cb = bluetooth_event_cb*/},
-    {.name = "SD Card",  .img = (void *) &sd,  /*.event_cb =sd_event_cb*/},
-    {.name = "Light",  .img = (void *) &light, /*.event_cb = light_event_cb*/},
+//    {.name = "SD Card",  .img = (void *) &sd,  /*.event_cb =sd_event_cb*/},
+//    {.name = "Light",  .img = (void *) &light, /*.event_cb = light_event_cb*/},
     {.name = "Setting",  .img = (void *) &setting, /*.event_cb = setting_event_cb */},
-    {.name = "Modules",  .img = (void *) &modules, /*.event_cb = modules_event_cb */},
-    {.name = "Camera",  .img = (void *) &CAMERA_PNG, /*.event_cb = camera_event_cb*/ }
+    {.name = "About",  .img = (void *) &modules, .event_cb = about_event_cb}
+//    {.name = "Camera",  .img = (void *) &CAMERA_PNG, /*.event_cb = camera_event_cb*/ }
 };
 
 
@@ -368,7 +369,6 @@ void setupGui()
     updateBatteryIcon(icon);
 
     //! main
-    static lv_style_t mainStyle;
     lv_style_init(&mainStyle);
     lv_style_set_radius(&mainStyle, LV_OBJ_PART_MAIN, 0);
     lv_style_set_bg_color(&mainStyle, LV_OBJ_PART_MAIN, LV_COLOR_GRAY);
@@ -431,6 +431,7 @@ void updateTime()
     char buf[64];
     static char weekDays[7][4] = {"Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"};
     TTGOClass *ttgo = TTGOClass::getWatch();
+    extern unsigned int screenTimeout;
     
     time(&now);
     localtime_r(&now, &info);
@@ -441,14 +442,33 @@ void updateTime()
     lv_label_set_text_fmt(dateLabel, "%s %s", weekDays[info.tm_wday],buf);
     lv_obj_align(dateLabel, NULL, LV_ALIGN_CENTER, 0, 0);
 
-    if ((info.tm_hour > 22) || (info.tm_hour < 8))
+    if (screenTimeout == DEFAULT_SCREEN_TIMEOUT)
     {
-      ttgo->setBrightness(16);
+      if ((info.tm_hour > 22) || (info.tm_hour < 8))
+      {
+        ttgo->setBrightness(16);
+      }
+      else
+      {
+        ttgo->setBrightness(64);
+      }
     }
-    else
-    {
-      ttgo->setBrightness(64);
-    }
+}
+
+void torchOn ()
+{
+  //lv_style_set_bg_color(&mainStyle, LV_OBJ_PART_MAIN, LV_COLOR_WHITE);
+  //lv_obj_refresh_style(mainBar, LV_STYLE_BG_COLOR);
+}
+
+void torchOff ()
+{
+  extern unsigned int screenTimeout;
+  
+  screenTimeout = DEFAULT_SCREEN_TIMEOUT;
+  //lv_style_set_bg_color(&mainStyle, LV_OBJ_PART_MAIN, LV_COLOR_GRAY);
+  //lv_obj_refresh_style(mainBar, LV_STYLE_BG_COLOR);
+  updateTime ();
 }
 
 void updateBatteryLevel()
@@ -801,7 +821,7 @@ public:
             }
         }
 
-        if (event == LV_EVENT_VALUE_CHANGED) {
+        if (event == LV_EVENT_SHORT_CLICKED) {
             for (int i = 0; i < _switch->_count ; i++) {
                 lv_obj_t *sw = _switch->_sw[i];
                 if (obj == sw) {
@@ -1363,7 +1383,8 @@ static void setting_event_cb()
  *
  *          ! LIGHT EVENT
  *
- */
+ *
+
 static void light_sw_event_cb(uint8_t index, bool en)
 {
     //Add lights that need to be controlled
@@ -1392,7 +1413,7 @@ static void light_event_cb()
         sw->setStatus(i, 0);
     }
 }
-
+*/
 
 /*****************************************************************
  *
@@ -1433,19 +1454,20 @@ static void destory_mbox()
  *
  *          ! SD CARD EVENT
  *
- */
+
 
 static void sd_event_cb()
 {
  
 }
+*/
 
 /*****************************************************************
-*
- *          ! Modules EVENT
+ *
+ *          About EVENT
  *
  */
-static void modules_event_cb()
+static void about_event_cb()
 {
 
 }
@@ -1455,9 +1477,9 @@ static void modules_event_cb()
 *
  *          ! Camera EVENT
  *
- */
 
 static void camera_event_cb()
 {
 
 }
+*/

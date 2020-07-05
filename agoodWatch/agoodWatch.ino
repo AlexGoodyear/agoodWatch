@@ -1,6 +1,12 @@
 /*
  * Copyright (c) 2020 Alex Goodyear
- * Derived from ...
+ * 
+ * agoodWatch will always work with my fork of the LilyGo TTGO_TWatch_Library at
+ * https://github.com/AlexGoodyear/TTGO_TWatch_Library
+ * 
+ * Derived from the SimpleWatch example in https://github.com/Xinyuan-LilyGO/TTGO_TWatch_Library
+ * 
+ * Original copyright below ...
 Copyright (c) 2019 lewis he
 This is just a demonstration. Most of the functions are not implemented.
 The main implementation is low-power standby. 
@@ -8,36 +14,6 @@ The off-screen standby (not deep sleep) current is about 4mA.
 Select standard motherboard and standard backplane for testing.
 Created by Lewis he on October 10, 2019.
 */
-
-/*
- * ToDo list for MyWatch.
- * What are the other development environments like for the watch? There seem to be several advertised including
- *    python.
- * Add version ID to code that is output on serial and status bar.
- * Add an ifdef list to select each new feature/improvement (retro fit especially to battery improvements so stats
- *    can be gathered when the battery monitoring is added).
- * Create a new "About" menu item in the main scrolling tile list and add version ID (and ifdef feature list).
- * Add multi-press support for the button to implement a basic instant menu system
- *    o use it to boost screen brightness (2 presses within 500ms - later configurable in setup menu)
- *    o use it to change screen completely white for a torch mode (3 presses, each within 500ms of previous press)
- * Add an auto dimming feature for night time (have to use fixed times - later add to setup menu)
- * Experiment with the CPU clock speeds - slower better battery life but how is UI reponsiveness affected?
- * Add the above features to the "Setup" menu
- * Add some kind of battery monitoring database to better track battery usage.
- * Add step tracking and syncing to desktop/phone/google drive ??? PREMIUM ???
- * Add network OTA updates ?????
- * Add alarms.
- * Add a stopwatch with laps and average laps using just 2 onscreen buttons start/stop/cont and lap/cont/reset
- * Add backgrounds
- * Add single analogue dial 
- * Add multiple selectable analogue dials *** PREMIUM ***
- * Add network uploads for analogue dials *** PREMIUM ***
- * Add networked synced calendar *** PREMIUM ***
- * Add whole phone style notifications via Bluetooth - phone call, SMS, email (calendar) *** PREMUIM ***
- *    o Is there such a thing as low-power BT mode?
- * Can the accelerometer be used for fall detection?
- * Games for the watch?
- */
  
 #include "config.h"
 
@@ -75,8 +51,6 @@ enum {
     Q_EVENT_AXP_INT,
 } ;
 
-#define DEFAULT_SCREEN_TIMEOUT  5*1000    //Was 30* - Should reduce battery consumption.
-
 #define WATCH_FLAG_SLEEP_MODE   _BV(1)
 #define WATCH_FLAG_SLEEP_EXIT   _BV(2)
 #define WATCH_FLAG_BMA_IRQ      _BV(3)
@@ -88,6 +62,7 @@ EventGroupHandle_t isr_group = NULL;
 bool lenergy = false;
 TTGOClass *ttgo;
 lv_icon_battery_t batState = LV_ICON_CALCULATION;
+unsigned int screenTimeout = DEFAULT_SCREEN_TIMEOUT;
 
 void setupNetwork()
 {
@@ -115,10 +90,17 @@ void low_energy()
     if (ttgo->bl->isOn()) {
         DSERIAL(println, "low_energy() - BL is on");
         xEventGroupSetBits(isr_group, WATCH_FLAG_SLEEP_MODE);
+        
+        if (screenTimeout > DEFAULT_SCREEN_TIMEOUT)
+        {
+          torchOff();
+        }
+
         ttgo->closeBL();
         ttgo->stopLvglTick();
         ttgo->bma->enableStepCountInterrupt(false);
         ttgo->displaySleep();
+
         if (!WiFi.isConnected()) {
             DSERIAL(println, "low_energy() - WiFi is off entering 2MHz mode");
             delay(250);
@@ -142,7 +124,8 @@ void low_energy()
         lv_disp_trig_activity(NULL);
         ttgo->openBL();
         ttgo->bma->enableStepCountInterrupt(true);
-        //ttgo->bl->adjust(64);
+        screenTimeout = DEFAULT_SCREEN_TIMEOUT;
+
     }
 }
 
@@ -189,10 +172,11 @@ void setup()
         EventBits_t  bits = xEventGroupGetBitsFromISR(isr_group);
         if (bits & WATCH_FLAG_SLEEP_MODE)
         {
-            //! For quick wake up, use the group flag
+            // Use an XEvent when waking from low energy sleep mode.
             xEventGroupSetBitsFromISR(isr_group, WATCH_FLAG_SLEEP_EXIT | WATCH_FLAG_BMA_IRQ, &xHigherPriorityTaskWoken);
         } else
         {
+            // Use the XQueue mechanism when we are already awake.
             uint8_t data = Q_EVENT_BMA_INT;
             xQueueSendFromISR(g_event_queue_handle, &data, &xHigherPriorityTaskWoken);
         }
@@ -210,10 +194,11 @@ void setup()
         EventBits_t  bits = xEventGroupGetBitsFromISR(isr_group);
         if (bits & WATCH_FLAG_SLEEP_MODE)
         {
-            //! For quick wake up, use the group flag
+            // Use an XEvent when waking from low energy sleep mode.
             xEventGroupSetBitsFromISR(isr_group, WATCH_FLAG_SLEEP_EXIT | WATCH_FLAG_AXP_IRQ, &xHigherPriorityTaskWoken);
         } else
         {
+            // Use the XQueue mechanism when we are already awake.
             uint8_t data = Q_EVENT_AXP_INT;
             xQueueSendFromISR(g_event_queue_handle, &data, &xHigherPriorityTaskWoken);
         }
@@ -267,7 +252,7 @@ void loop()
     uint8_t data;
     static uint32_t start = 0;
 
-    //! Fast response wake-up interrupt
+    // An XEvent signifies that there has been a wakeup interrupt, bring the CPU out of low energy mode
     EventBits_t  bits = xEventGroupGetBits(isr_group);
     if (bits & WATCH_FLAG_SLEEP_EXIT) {
         if (lenergy) {
@@ -288,7 +273,6 @@ void loop()
           DSERIAL(println, "WATCH_FLAG_AXP_IRQ");
             ttgo->power->readIRQ();
             ttgo->power->clearIRQ();
-            //TODO: Only accept axp power pek key short press
             xEventGroupClearBits(isr_group, WATCH_FLAG_AXP_IRQ);
         }
         xEventGroupClearBits(isr_group, WATCH_FLAG_SLEEP_EXIT);
@@ -309,6 +293,19 @@ void loop()
                 rlst =  ttgo->bma->readInterrupt();
             } while (!rlst);
 
+            if (ttgo->bma->isDoubleClick()) {
+              if (screenTimeout == DEFAULT_SCREEN_TIMEOUT)
+              {
+                screenTimeout--;
+                ttgo->setBrightness(255);
+              }
+              else
+              {
+                 screenTimeout = 5 * 60 * 1000;
+                 torchOn();
+              }
+            }
+            
             //! setp counter
             if (ttgo->bma->isStepCounter()) {
                 updateStepCounter(ttgo->bma->getCounter());
@@ -349,7 +346,7 @@ void loop()
         }
 
     }
-    if (lv_disp_get_inactive_time(NULL) < DEFAULT_SCREEN_TIMEOUT) {
+    if (lv_disp_get_inactive_time(NULL) < screenTimeout) {
         lv_task_handler();
     } else {
         low_energy();

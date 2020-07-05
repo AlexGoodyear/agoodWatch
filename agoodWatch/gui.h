@@ -15,8 +15,10 @@ Created by Lewis he on October 10, 2019.
 #define STR(_s) XSTR(_s)
 #define XSTR(_s) #_s
 
-#define THIS_VERSION_ID  0.1
-#define THIS_VERSION_STR "Version " STR(THIS_VERSION_ID)
+#define THIS_VERSION_ID  0.2
+#define THIS_VERSION_STR "Ver " STR(THIS_VERSION_ID)
+
+#define DEFAULT_SCREEN_TIMEOUT  5*1000    //Was 30* - Should reduce battery consumption.
 
 typedef enum {
     LV_ICON_BAT_EMPTY,
@@ -43,5 +45,7 @@ void wifi_list_add(const char *ssid);
 void wifi_connect_status(bool result);
 void updateBatteryLevel();
 void updateTime();
+void torchOn();
+void torchOff();
 
 #endif /*__GUI_H */
