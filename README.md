@@ -2,9 +2,9 @@
 
 ## A TTGO-T-Watch-2020 Arduino sketch
 
-<img src="https://github.com/AlexGoodyear/TestRepo/blob/master/images/agoodWatchV02.jpg" width="300" />
+<img src="https://github.com/AlexGoodyear/agoodWatch/blob/master/images/agoodWatchV02.jpg" width="300" />
 
-First ensure that you have installed the TTGO_TWatch_Library, then put the agoodTwatch directory into your Arduino sketch area.
+First ensure that you have installed the TTGO_TWatch_Library, then put the agoodWatch directory into your Arduino sketch area.
 
 This code is derived from the SimpleWatch example in the [Xinyuan LilyGO TTGO_TWatch GitHub repository](https://github.com/Xinyuan-LilyGO/TTGO_TWatch_Library).
 
