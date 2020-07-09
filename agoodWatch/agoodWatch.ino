@@ -91,7 +91,7 @@ void low_energy()
         DSERIAL(println, "low_energy() - BL is on");
         xEventGroupSetBits(isr_group, WATCH_FLAG_SLEEP_MODE);
         
-        if (screenTimeout > DEFAULT_SCREEN_TIMEOUT)
+        if (screenTimeout != DEFAULT_SCREEN_TIMEOUT)
         {
           torchOff();
         }
@@ -303,6 +303,7 @@ void loop()
               {
                  screenTimeout = 5 * 60 * 1000;
                  torchOn();
+                 rtc_clk_cpu_freq_set(RTC_CPU_FREQ_80M);
               }
             }
             

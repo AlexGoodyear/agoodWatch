@@ -9,7 +9,6 @@ Select standard motherboard and standard backplane for testing.
 Created by Lewis he on October 10, 2019.
 */
 
-//#include <TTGO.h>
 #include "config.h"
 #include <Arduino.h>
 #include <time.h>
@@ -17,8 +16,6 @@ Created by Lewis he on October 10, 2019.
 #include <WiFi.h>
 #include "string.h"
 #include <Ticker.h>
-//#include "FS.h"
-//#include "SD.h"
 
 #define RTC_TIME_ZONE   "GMT"
 
@@ -34,9 +31,7 @@ LV_IMG_DECLARE(step);
 LV_IMG_DECLARE(menu);
 
 LV_IMG_DECLARE(wifi);
-//LV_IMG_DECLARE(light);
 LV_IMG_DECLARE(bluetooth);
-//LV_IMG_DECLARE(sd);
 LV_IMG_DECLARE(setting);
 LV_IMG_DECLARE(on);
 LV_IMG_DECLARE(off);
@@ -44,8 +39,7 @@ LV_IMG_DECLARE(level1);
 LV_IMG_DECLARE(level2);
 LV_IMG_DECLARE(level3);
 LV_IMG_DECLARE(iexit);
-LV_IMG_DECLARE(modules);
-//LV_IMG_DECLARE(CAMERA_PNG);
+LV_IMG_DECLARE(modules); // AKA About!
 
 extern EventGroupHandle_t g_event_group;
 extern QueueHandle_t g_event_queue_handle;
@@ -56,6 +50,7 @@ static lv_style_t mainStyle;
 static lv_obj_t *timeLabel = nullptr;
 static lv_obj_t *dateLabel = nullptr;
 static lv_obj_t *menuBtn = nullptr;
+static lv_obj_t *torchLabel = nullptr;
 
 static uint8_t globalIndex = 0;
 
@@ -64,12 +59,9 @@ static void lv_battery_task(struct _lv_task_t *);
 static void view_event_handler(lv_obj_t *obj, lv_event_t event);
 
 static void wifi_event_cb();
-//static void sd_event_cb();
 static void setting_event_cb();
-//static void light_event_cb();
 static void bluetooth_event_cb();
 static void about_event_cb();
-//static void camera_event_cb();
 static void wifi_destory();
 
 class StatusBar
@@ -190,8 +182,6 @@ private:
     const int8_t iconOffset = -5;
 };
 
-
-
 class MenuBar
 {
 public:
@@ -242,7 +232,7 @@ public:
         lv_obj_set_size(_cont, LV_HOR_RES, LV_VER_RES - 30);
         lv_obj_align(_cont, NULL, LV_ALIGN_OUT_BOTTOM_MID, 0, 0);
         lv_obj_add_style(_cont, LV_OBJ_PART_MAIN, &menuStyle);
-
+        
         _view = lv_tileview_create(_cont, NULL);
         lv_tileview_set_valid_positions(_view, _vp, count );
         lv_tileview_set_edge_flash(_view, false);
@@ -274,10 +264,10 @@ public:
         }
 
         _exit  = lv_imgbtn_create(lv_scr_act(), NULL);
-        lv_imgbtn_set_src(_exit, LV_BTN_STATE_RELEASED, &menu);
-        lv_imgbtn_set_src(_exit, LV_BTN_STATE_PRESSED, &menu);
-        lv_imgbtn_set_src(_exit, LV_BTN_STATE_CHECKED_PRESSED, &menu);
-        lv_imgbtn_set_src(_exit, LV_BTN_STATE_CHECKED_RELEASED, &menu);
+        lv_imgbtn_set_src(_exit, LV_BTN_STATE_RELEASED, &iexit);
+        lv_imgbtn_set_src(_exit, LV_BTN_STATE_PRESSED, &iexit);
+        lv_imgbtn_set_src(_exit, LV_BTN_STATE_CHECKED_PRESSED, &iexit);
+        lv_imgbtn_set_src(_exit, LV_BTN_STATE_CHECKED_RELEASED, &iexit);
         lv_obj_align(_exit, NULL, LV_ALIGN_IN_BOTTOM_RIGHT, -20, -20);
         lv_obj_set_event_cb(_exit, event_cb);
         lv_obj_set_top(_exit, true);
@@ -309,11 +299,8 @@ private:
 MenuBar::lv_menu_config_t _cfg[4] = {
     {.name = "WiFi",  .img = (void *) &wifi, .event_cb = wifi_event_cb},
     {.name = "Bluetooth",  .img = (void *) &bluetooth, /*.event_cb = bluetooth_event_cb*/},
-//    {.name = "SD Card",  .img = (void *) &sd,  /*.event_cb =sd_event_cb*/},
-//    {.name = "Light",  .img = (void *) &light, /*.event_cb = light_event_cb*/},
-    {.name = "Setting",  .img = (void *) &setting, /*.event_cb = setting_event_cb */},
+    {.name = "Settings",  .img = (void *) &setting, /*.event_cb = setting_event_cb */},
     {.name = "About",  .img = (void *) &modules, .event_cb = about_event_cb}
-//    {.name = "Camera",  .img = (void *) &CAMERA_PNG, /*.event_cb = camera_event_cb*/ }
 };
 
 
@@ -336,9 +323,10 @@ static void event_handler(lv_obj_t *obj, lv_event_t event)
     }
 }
 
-
 void setupGui()
 {
+    lv_obj_t *scr = lv_scr_act();
+    
     lv_style_init(&settingStyle);
     lv_style_set_radius(&settingStyle, LV_OBJ_PART_MAIN, 0);
     lv_style_set_bg_color(&settingStyle, LV_OBJ_PART_MAIN, LV_COLOR_GRAY);
@@ -346,10 +334,22 @@ void setupGui()
     lv_style_set_border_width(&settingStyle, LV_OBJ_PART_MAIN, 0);
     lv_style_set_text_color(&settingStyle, LV_OBJ_PART_MAIN, LV_COLOR_WHITE);
     lv_style_set_image_recolor(&settingStyle, LV_OBJ_PART_MAIN, LV_COLOR_WHITE);
-
+    
+    // Create the torch and ensure that it is at the back of all other widgets.
+    torchLabel = lv_btn_create (scr, NULL);
+    static lv_style_t torchStyle;
+    lv_style_copy(&torchStyle, &settingStyle);
+    lv_style_set_bg_color(&torchStyle, LV_OBJ_PART_MAIN, LV_COLOR_WHITE);
+    lv_style_set_bg_opa(&torchStyle, LV_OBJ_PART_MAIN, 255);
+    lv_style_set_image_recolor(&torchStyle, LV_OBJ_PART_MAIN, LV_COLOR_CYAN);
+    lv_obj_add_style(torchLabel, LV_OBJ_PART_MAIN, &torchStyle);
+    //lv_label_set_text(torchLabel, "TORCH MODE");
+    lv_obj_move_background(torchLabel);
+    lv_obj_set_pos(torchLabel, 0, 0);
+    lv_obj_set_size(torchLabel, LV_HOR_RES, LV_VER_RES);
+    
     //Create wallpaper
     void *images[] = {(void *) &bg, (void *) &bg1, (void *) &bg2, (void *) &bg3 };
-    lv_obj_t *scr = lv_scr_act();
     lv_obj_t *img_bin = lv_img_create(scr, NULL);  /*Create an image object*/
     srand((int)time(0));
     int r = rand() % 4;
@@ -446,7 +446,7 @@ void updateTime()
     {
       if ((info.tm_hour > 22) || (info.tm_hour < 8))
       {
-        ttgo->setBrightness(16);
+        ttgo->setBrightness(8);
       }
       else
       {
@@ -457,8 +457,7 @@ void updateTime()
 
 void torchOn ()
 {
-  //lv_style_set_bg_color(&mainStyle, LV_OBJ_PART_MAIN, LV_COLOR_WHITE);
-  //lv_obj_refresh_style(mainBar, LV_STYLE_BG_COLOR);
+  lv_obj_move_foreground(torchLabel);
 }
 
 void torchOff ()
@@ -466,8 +465,7 @@ void torchOff ()
   extern unsigned int screenTimeout;
   
   screenTimeout = DEFAULT_SCREEN_TIMEOUT;
-  //lv_style_set_bg_color(&mainStyle, LV_OBJ_PART_MAIN, LV_COLOR_GRAY);
-  //lv_obj_refresh_style(mainBar, LV_STYLE_BG_COLOR);
+  lv_obj_move_background(torchLabel);
   updateTime ();
 }
 
@@ -1378,11 +1376,9 @@ static void setting_event_cb()
 
 }
 
-
 /*****************************************************************
  *
  *          ! LIGHT EVENT
- *
  *
 
 static void light_sw_event_cb(uint8_t index, bool en)
@@ -1452,34 +1448,70 @@ static void destory_mbox()
 
 /*****************************************************************
  *
- *          ! SD CARD EVENT
- *
-
-
-static void sd_event_cb()
-{
- 
-}
-*/
-
-/*****************************************************************
- *
  *          About EVENT
  *
+ * This is an experiment trying to use the table widget - it isn't really suitable
+ * Need to develop a more generic widget container that combines List, Table and 
+ * ButtonMatrix widgets - probably based upon the Switch and List classes in this
+ * gui.cpp file.
  */
+
+static lv_obj_t *about = nullptr;
+
+static void exit_about(lv_obj_t *obj, lv_event_t event)
+{
+  if (event == LV_EVENT_SHORT_CLICKED)
+  {
+    lv_obj_set_hidden(about, true);
+
+    menuBars.hidden(false);
+  }
+}
+
 static void about_event_cb()
 {
+  lv_obj_t *_exitBtn = nullptr;
+  lv_obj_t * table = nullptr;
 
+  if (about == nullptr)
+  {
+    static lv_style_t barStyle;
+    
+    lv_style_init(&barStyle);
+    lv_style_set_radius(&barStyle, LV_OBJ_PART_MAIN, 0);
+    lv_style_set_bg_color(&barStyle, LV_OBJ_PART_MAIN, LV_COLOR_GRAY);
+    lv_style_set_bg_opa(&barStyle, LV_OBJ_PART_MAIN, LV_OPA_20);
+    lv_style_set_border_width(&barStyle, LV_OBJ_PART_MAIN, 0);
+    lv_style_set_text_color(&barStyle, LV_OBJ_PART_MAIN, LV_COLOR_WHITE);
+    lv_style_set_image_recolor(&barStyle, LV_OBJ_PART_MAIN, LV_COLOR_WHITE);
+     
+    about = lv_cont_create(lv_scr_act(), NULL);
+    lv_obj_set_size(about, LV_HOR_RES, LV_VER_RES);
+    lv_obj_add_style(about, LV_OBJ_PART_MAIN, &barStyle);
+
+    _exitBtn = lv_imgbtn_create(about, NULL);
+    lv_imgbtn_set_src(_exitBtn, LV_BTN_STATE_ACTIVE, &iexit);
+    lv_imgbtn_set_src(_exitBtn, LV_BTN_STATE_RELEASED, &iexit);
+    lv_imgbtn_set_src(_exitBtn, LV_BTN_STATE_PRESSED, &iexit);
+    lv_imgbtn_set_src(_exitBtn, LV_BTN_STATE_CHECKED_RELEASED, &iexit);
+    lv_imgbtn_set_src(_exitBtn, LV_BTN_STATE_CHECKED_PRESSED, &iexit);
+    lv_obj_set_click(_exitBtn, true);
+    lv_obj_align(_exitBtn, about, LV_ALIGN_IN_BOTTOM_MID, 0, 0);
+    lv_obj_set_event_cb(_exitBtn, exit_about);
+    
+    table = lv_table_create(about, NULL);
+    
+    lv_table_set_col_cnt(table, 1);
+    lv_table_set_row_cnt(table, 2);
+    lv_obj_align(table, about, LV_ALIGN_IN_TOP_MID, 0, 0);
+    
+    /*Fill the column*/
+    lv_table_set_col_width(table, 0, 240);
+    lv_table_set_cell_value(table, 0, 0, "agoodWatch " THIS_VERSION_STR);
+    lv_table_set_cell_value(table, 1, 0, "By Alex Goodyear");
+  }
+  else
+  {
+    lv_obj_set_hidden(about, false);
+  }
 }
-
-
-/*****************************************************************
-*
- *          ! Camera EVENT
- *
-
-static void camera_event_cb()
-{
-
-}
-*/

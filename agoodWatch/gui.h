@@ -15,10 +15,10 @@ Created by Lewis he on October 10, 2019.
 #define STR(_s) XSTR(_s)
 #define XSTR(_s) #_s
 
-#define THIS_VERSION_ID  0.2
+#define THIS_VERSION_ID  0.3
 #define THIS_VERSION_STR "Ver " STR(THIS_VERSION_ID)
 
-#define DEFAULT_SCREEN_TIMEOUT  5*1000    //Was 30* - Should reduce battery consumption.
+#define DEFAULT_SCREEN_TIMEOUT  6*1000    //Was 30* - Should reduce battery consumption.
 
 typedef enum {
     LV_ICON_BAT_EMPTY,
