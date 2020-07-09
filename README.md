@@ -2,7 +2,7 @@
 
 ## A TTGO-T-Watch-2020 Arduino sketch
 
-![agood watch image](images/agoodWatchV02.jpg)
+<img src="https://github.com/AlexGoodyear/TestRepo/blob/master/images/agoodWatchV02.jpg" width="300" />
 
 First ensure that you have installed the TTGO_TWatch_Library, then put the agoodTwatch directory into your Arduino sketch area.
 
