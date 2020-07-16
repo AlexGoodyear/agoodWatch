@@ -64,6 +64,88 @@ static void bluetooth_event_cb();
 static void about_event_cb();
 static void wifi_destory();
 
+void my_log_cb(lv_log_level_t level, const char * file, int line, const char * fn_name, const char * dsc)
+{
+  /*Send the logs via serial port*/
+  if(level == LV_LOG_LEVEL_ERROR) Serial.print("ERROR: ");
+  if(level == LV_LOG_LEVEL_WARN)  Serial.print("WARNING: ");
+  if(level == LV_LOG_LEVEL_INFO)  Serial.print("INFO: ");
+  if(level == LV_LOG_LEVEL_TRACE) Serial.print("TRACE: ");
+
+  Serial.printf("%s:%d:%s: %s\n", file, line, fn_name, dsc);
+}
+
+#define DEBUG_EVENTS
+#ifdef DEBUG_EVENTS
+static void my_test_event_cb(lv_obj_t * obj, lv_event_t event)
+{
+    Serial.printf ("my_test_event (%p, %d) : ", obj, event);
+
+    switch(event) {
+        case LV_EVENT_PRESSED:
+            Serial.println("LV_EVENT_PRESSED");
+            break;
+
+        case LV_EVENT_PRESSING:
+            Serial.println("LV_EVENT_PRESSING");
+            break;
+
+        case LV_EVENT_PRESS_LOST:
+            Serial.println("LV_EVENT_PRESS_LOST");
+            break;
+
+        case LV_EVENT_SHORT_CLICKED:
+            Serial.println("LV_EVENT_SHORT_CLICKED");
+            break;
+
+        case LV_EVENT_CLICKED:
+            Serial.println("LV_EVENT_CLICKED");
+            break;
+
+        case LV_EVENT_LONG_PRESSED:
+            Serial.println("LV_EVENT_LONG_PRESSED");
+            break;
+
+        case LV_EVENT_LONG_PRESSED_REPEAT:
+            Serial.println("LV_EVENT_LONG_PRESSED_REPEAT");
+            break;
+
+        case LV_EVENT_RELEASED:
+            Serial.println("LV_EVENT_RELEASED");
+            break;
+
+        case LV_EVENT_DRAG_BEGIN:
+            Serial.println("LV_EVENT_DRAG_BEGIN");
+            break;
+
+        case LV_EVENT_DRAG_END:
+            Serial.println("LV_EVENT_DRAG_END");
+            break;
+
+        case LV_EVENT_DRAG_THROW_BEGIN:
+            Serial.println("LV_EVENT_DRAG_THROW_BEGIN");
+            break;
+
+        case LV_EVENT_GESTURE:
+            Serial.printf("LV_EVENT_GESTURE dir=%d\n", (int)lv_indev_get_gesture_dir(lv_indev_get_act()));
+            break;
+
+        case LV_EVENT_KEY:
+            Serial.println("LV_EVENT_KEY");
+            break;
+        case LV_EVENT_FOCUSED:
+            Serial.println("LV_EVENT_FOCUSED");
+            break;
+        case LV_EVENT_DEFOCUSED:
+            Serial.println("LV_EVENT_DEFOCUSED");
+            break;
+        case LV_EVENT_LEAVE:
+            Serial.println("LV_EVENT_LEAVE");
+            break;
+    }
+}
+#endif
+
 class StatusBar
 {
     typedef struct {
@@ -325,6 +407,8 @@ static void event_handler(lv_obj_t *obj, lv_event_t event)
 
 void setupGui()
 {
+    lv_log_register_print_cb((lv_log_print_g_cb_t)my_log_cb);
+
     lv_obj_t *scr = lv_scr_act();
     
     lv_style_init(&settingStyle);
@@ -335,19 +419,39 @@ void setupGui()
     lv_style_set_text_color(&settingStyle, LV_OBJ_PART_MAIN, LV_COLOR_WHITE);
     lv_style_set_image_recolor(&settingStyle, LV_OBJ_PART_MAIN, LV_COLOR_WHITE);
     
-    // Create the torch and ensure that it is at the back of all other widgets.
+    /* 
+     * Create the torch and ensure that it is at the back of all other widgets.
+     * I tried creating a label and a container before finally stumbling upon
+     * the positioning functionality I wanted with a button.
+     */
     torchLabel = lv_btn_create (scr, NULL);
     static lv_style_t torchStyle;
     lv_style_copy(&torchStyle, &settingStyle);
     lv_style_set_bg_color(&torchStyle, LV_OBJ_PART_MAIN, LV_COLOR_WHITE);
     lv_style_set_bg_opa(&torchStyle, LV_OBJ_PART_MAIN, 255);
-    lv_style_set_image_recolor(&torchStyle, LV_OBJ_PART_MAIN, LV_COLOR_CYAN);
+    lv_style_set_text_color(&torchStyle, LV_OBJ_PART_MAIN, LV_COLOR_RED);
     lv_obj_add_style(torchLabel, LV_OBJ_PART_MAIN, &torchStyle);
-    //lv_label_set_text(torchLabel, "TORCH MODE");
+    lv_obj_set_size(torchLabel, LV_HOR_RES, LV_VER_RES - 30);
     lv_obj_move_background(torchLabel);
-    lv_obj_set_pos(torchLabel, 0, 0);
-    lv_obj_set_size(torchLabel, LV_HOR_RES, LV_VER_RES);
-    
+    lv_obj_set_pos(torchLabel, 0, 30);
+    lv_obj_t *l = lv_label_create (torchLabel, NULL);
+
+    /*
+     * I have a suspicion that this scroll mode eats battery!
+     */
+    //lv_label_set_long_mode(l, LV_LABEL_LONG_SROLL_CIRC);    // LVGL spelling mistake!
+    //lv_obj_set_width(l, 100);
+    lv_label_set_text(l, "  TORCH MODE  ");
+    lv_obj_align(l, NULL, LV_ALIGN_CENTER, 0, 0);
+    lv_obj_set_user_data(torchLabel, l);
+    /*
+     * There seems to be an LVGL buglet that allows the scrolling label to bleed through
+     * to the tile menu. Hiding it makes the ghost image disappear.
+     */
+    //lv_obj_set_hidden (l, true);
+
+//Maybe I should just hide the torchLabel then I wouldn't have to jump through hoops?????
+
     //Create wallpaper
     void *images[] = {(void *) &bg, (void *) &bg1, (void *) &bg2, (void *) &bg3 };
     lv_obj_t *img_bin = lv_img_create(scr, NULL);  /*Create an image object*/
@@ -382,6 +486,10 @@ void setupGui()
     lv_obj_add_style(mainBar, LV_OBJ_PART_MAIN, &mainStyle);
     
     lv_obj_align(mainBar, bar.self(), LV_ALIGN_OUT_BOTTOM_MID, 0, 0);
+
+#ifdef DEBUG_EVENTS    
+    lv_obj_set_event_cb(scr, my_test_event_cb);
+#endif
 
     //! Time
     static lv_style_t timeStyle;
@@ -457,6 +565,7 @@ void updateTime()
 
 void torchOn ()
 {
+  //lv_obj_set_hidden ((lv_obj_t*)lv_obj_get_user_data (torchLabel), false);
   lv_obj_move_foreground(torchLabel);
 }
 
@@ -466,6 +575,7 @@ void torchOff ()
   
   screenTimeout = DEFAULT_SCREEN_TIMEOUT;
   lv_obj_move_background(torchLabel);
+  //lv_obj_set_hidden ((lv_obj_t*)lv_obj_get_user_data (torchLabel), true);
   updateTime ();
 }
 
@@ -1469,12 +1579,12 @@ static void exit_about(lv_obj_t *obj, lv_event_t event)
 }
 
 static void about_event_cb()
-{
-  lv_obj_t *_exitBtn = nullptr;
-  lv_obj_t * table = nullptr;
+{ 
+  static lv_obj_t *_label = nullptr;
 
   if (about == nullptr)
   {
+    lv_obj_t *_exitBtn = nullptr;
     static lv_style_t barStyle;
     
     lv_style_init(&barStyle);
@@ -1485,11 +1595,12 @@ static void about_event_cb()
     lv_style_set_text_color(&barStyle, LV_OBJ_PART_MAIN, LV_COLOR_WHITE);
     lv_style_set_image_recolor(&barStyle, LV_OBJ_PART_MAIN, LV_COLOR_WHITE);
      
-    about = lv_cont_create(lv_scr_act(), NULL);
-    lv_obj_set_size(about, LV_HOR_RES, LV_VER_RES);
-    lv_obj_add_style(about, LV_OBJ_PART_MAIN, &barStyle);
+    about = lv_cont_create (lv_scr_act(), NULL);
+    lv_obj_set_size (about, LV_HOR_RES, LV_VER_RES - 30);
+    lv_obj_set_pos (about, 0, 30);
+    lv_obj_add_style (about, LV_OBJ_PART_MAIN, &barStyle);
 
-    _exitBtn = lv_imgbtn_create(about, NULL);
+    _exitBtn = lv_imgbtn_create (about, NULL);
     lv_imgbtn_set_src(_exitBtn, LV_BTN_STATE_ACTIVE, &iexit);
     lv_imgbtn_set_src(_exitBtn, LV_BTN_STATE_RELEASED, &iexit);
     lv_imgbtn_set_src(_exitBtn, LV_BTN_STATE_PRESSED, &iexit);
@@ -1498,20 +1609,16 @@ static void about_event_cb()
     lv_obj_set_click(_exitBtn, true);
     lv_obj_align(_exitBtn, about, LV_ALIGN_IN_BOTTOM_MID, 0, 0);
     lv_obj_set_event_cb(_exitBtn, exit_about);
-    
-    table = lv_table_create(about, NULL);
-    
-    lv_table_set_col_cnt(table, 1);
-    lv_table_set_row_cnt(table, 2);
-    lv_obj_align(table, about, LV_ALIGN_IN_TOP_MID, 0, 0);
-    
-    /*Fill the column*/
-    lv_table_set_col_width(table, 0, 240);
-    lv_table_set_cell_value(table, 0, 0, "agoodWatch " THIS_VERSION_STR);
-    lv_table_set_cell_value(table, 1, 0, "By Alex Goodyear");
+
+    _label = lv_label_create (about, NULL);
+    lv_obj_add_style(_label, LV_OBJ_PART_MAIN, &barStyle);
   }
   else
   {
     lv_obj_set_hidden(about, false);
   }
+  
+  lv_label_set_text_fmt (_label, "\nagoodWatch %s\n(C) copyright Alex Goodyear\n%s\n\nCPU speed=%dMHz\nFree mem=%d",
+                           THIS_VERSION_STR, __DATE__, getCpuFrequencyMhz(), esp_get_free_heap_size());
+  lv_obj_align(_label, about, LV_ALIGN_IN_TOP_MID, 0, 0);
 }

@@ -2,13 +2,32 @@
 
 ## A TTGO-T-Watch-2020 Arduino sketch
 
-<img src="https://github.com/AlexGoodyear/TestRepo/blob/master/images/agoodWatchV02.jpg" width="300" />
+<img src="https://github.com/AlexGoodyear/agoodWatch/blob/master/images/agoodWatchV02.jpg" width="300" />
 
-First ensure that you have installed the TTGO_TWatch_Library, then put the agoodTwatch directory into your Arduino sketch area.
+First ensure that you have installed the [TTGO_TWatch_Library](https://github.com/AlexGoodyear/TTGO_TWatch_Library), then put the agoodWatch directory into your Arduino sketch area.
 
 This code is derived from the SimpleWatch example in the [Xinyuan LilyGO TTGO_TWatch GitHub repository](https://github.com/Xinyuan-LilyGO/TTGO_TWatch_Library).
 
-I have had to make some changes to the above library code for the low level access routines. (As of Version 0.2, all changes have been accepted into the main branch so all current versions of agoodWatch can use either my library fork or the LilyGO main branch.)
+I have had to make some changes to the above library code for the low level access routines.
+
+## New swipe gesture navigation controls. NOTE this required a fix to the LVGL library so you need to use my [TTGO_TWatch_Library](https://github.com/AlexGoodyear/TTGO_TWatch_Library) for V0.4 and above.
+
+Top menu is always watch faces
+
+Face1 <-----> Face2 <-----> Face3    swipe left or right to change watch face
+
+Swipe down from any face to get to the feature menus
+
+WiFi <-----> BlueT <-----> Setup <-----> About    swipe left or right
+
+Swipe down on any feature to get to a set of menus specfic to that item
+If there is more than one screen then swipe left and right to navigate.
+
+Swipe up to return to the previous menu level until you get back to the watch faces.
+
+### Version 0.4
+1. Tweak torch mode to still display status bar (for battery monitoring).
+2. Add new swipe gesture controls and remove navigation icon buttons because screen real-estate is too valuable to waste on navigation buttons ;-)
 
 ### Version 0.3
 1. Forgot to put an exit button on the empty "About" screen - doh!

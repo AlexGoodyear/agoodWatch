@@ -106,7 +106,7 @@ void low_energy()
             delay(250);
             lenergy = true;
             WiFi.mode(WIFI_OFF);
-            rtc_clk_cpu_freq_set(RTC_CPU_FREQ_2M);
+            setCpuFrequencyMhz (2); 
             gpio_wakeup_enable ((gpio_num_t)AXP202_INT, GPIO_INTR_LOW_LEVEL);
             gpio_wakeup_enable ((gpio_num_t)BMA423_INT1, GPIO_INTR_HIGH_LEVEL);
             esp_sleep_enable_gpio_wakeup ();
@@ -125,7 +125,6 @@ void low_energy()
         ttgo->openBL();
         ttgo->bma->enableStepCountInterrupt(true);
         screenTimeout = DEFAULT_SCREEN_TIMEOUT;
-
     }
 }
 
@@ -257,7 +256,7 @@ void loop()
     if (bits & WATCH_FLAG_SLEEP_EXIT) {
         if (lenergy) {
             lenergy = false;
-            rtc_clk_cpu_freq_set(RTC_CPU_FREQ_160M);
+            setCpuFrequencyMhz(80); //rtc_clk_cpu_freq_set(RTC_CPU_FREQ_160M);
         }
 
         low_energy();
@@ -303,7 +302,7 @@ void loop()
               {
                  screenTimeout = 5 * 60 * 1000;
                  torchOn();
-                 rtc_clk_cpu_freq_set(RTC_CPU_FREQ_80M);
+                 setCpuFrequencyMhz (2);
               }
             }
             

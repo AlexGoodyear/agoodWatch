@@ -15,8 +15,8 @@ Created by Lewis he on October 10, 2019.
 #define STR(_s) XSTR(_s)
 #define XSTR(_s) #_s
 
-#define THIS_VERSION_ID  0.3
-#define THIS_VERSION_STR "Ver " STR(THIS_VERSION_ID)
+#define THIS_VERSION_ID  0.4
+#define THIS_VERSION_STR "Ver T" STR(THIS_VERSION_ID)
 
 #define DEFAULT_SCREEN_TIMEOUT  6*1000    //Was 30* - Should reduce battery consumption.
 
