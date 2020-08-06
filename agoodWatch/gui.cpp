@@ -17,8 +17,6 @@ Created by Lewis he on October 10, 2019.
 #include "string.h"
 #include <Ticker.h>
 
-#define RTC_TIME_ZONE   "GMT"
-
 LV_FONT_DECLARE(Ubuntu);
 LV_IMG_DECLARE(bg);
 LV_IMG_DECLARE(bg1);
@@ -64,6 +62,11 @@ static void bluetooth_event_cb();
 static void about_event_cb();
 static void wifi_destory();
 
+#ifdef DEBUG_EVENTS
+#define DEBUG_EVENTS
+/*
+ * This is for debugging the LVGL library, requires LV_USE_LOG setting in lv_conf.h
+ */
 void my_log_cb(lv_log_level_t level, const char * file, int line, const char * fn_name, const char * dsc)
 {
   /*Send the logs via serial port*/
@@ -75,8 +78,6 @@ void my_log_cb(lv_log_level_t level, const char * file, int line, const char * f
   Serial.printf("%s:%d:%s: %s\n", file, line, fn_name, dsc);
 }
 
-#define DEBUG_EVENTS
-#ifdef DEBUG_EVENTS
 static void my_test_event_cb(lv_obj_t * obj, lv_event_t event)
 {
     Serial.printf ("my_test_event (%p, %d) : ", obj, event);
@@ -407,7 +408,7 @@ static void event_handler(lv_obj_t *obj, lv_event_t event)
 
 void setupGui()
 {
-    lv_log_register_print_cb((lv_log_print_g_cb_t)my_log_cb);
+    //lv_log_register_print_cb((lv_log_print_g_cb_t)my_log_cb);
 
     lv_obj_t *scr = lv_scr_act();
     
@@ -487,9 +488,6 @@ void setupGui()
     
     lv_obj_align(mainBar, bar.self(), LV_ALIGN_OUT_BOTTOM_MID, 0, 0);
 
-#ifdef DEBUG_EVENTS    
-    lv_obj_set_event_cb(scr, my_test_event_cb);
-#endif
 
     //! Time
     static lv_style_t timeStyle;
@@ -505,6 +503,12 @@ void setupGui()
     lv_obj_add_style(dateLabel, LV_OBJ_PART_MAIN, &dateStyle);
     //lv_label_set_long_mode(dateLabel, LV_LABEL_LONG_SROLL_CIRC);
     updateTime();
+    
+#ifdef DEBUG_EVENTS    
+    lv_obj_set_gesture_parent(mainBar,0);
+    lv_obj_set_event_cb(mainBar, my_test_event_cb);
+    //lv_obj_set_event_cb(lv_scr_act(), my_test_event_cb);
+#endif
 
     //! menu
     static lv_style_t style_pr;
@@ -1337,14 +1341,12 @@ static void wifi_sync_mbox_cb(lv_task_t *t)
     }
 }
 
-
-
-
 void wifi_sw_event_cb(uint8_t index, bool en)
 {
     switch (index) {
     case 0:
         if (en) {
+            setCpuFrequencyMhz(CPU_FREQ_WIFI);
             WiFi.begin();
         } else {
             WiFi.disconnect();

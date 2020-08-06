@@ -18,7 +18,25 @@ Created by Lewis he on October 10, 2019.
 #define THIS_VERSION_ID  0.4
 #define THIS_VERSION_STR "Ver T" STR(THIS_VERSION_ID)
 
-#define DEFAULT_SCREEN_TIMEOUT  6*1000    //Was 30* - Should reduce battery consumption.
+/*
+ * Use a time-zone string from https://github.com/nayarsystems/posix_tz_db/blob/master/zones.csv
+ * Courtesy of Andreas Spiess NTP example https://github.com/SensorsIot and his YouTube channel
+ * https://www.youtube.com/channel/UCu7_D0o48KbfhpEohoP7YSQ
+ * 
+ * Also note that the NTP update may not update the time the first time so ensure that the time
+ * reported by the watch is correct before pressing "Ok" otherwise just press "Cancel" and try again.
+ */
+#define RTC_TIME_ZONE   "GMT0BST,M3.5.0/1,M10.5.0"  // Europe-London
+
+/*
+ * The number of milliseconds of inactivity before the watch goes to sleep. Ecery tap ot swipe on the
+ * screen will reset the internal timer.
+ */
+#define DEFAULT_SCREEN_TIMEOUT  7*1000    //Was 30* - Should reduce battery consumption.
+
+#define CPU_FREQ_MIN  10
+#define CPU_FREQ_NORM 80
+#define CPU_FREQ_WIFI 80
 
 typedef enum {
     LV_ICON_BAT_EMPTY,
@@ -29,7 +47,6 @@ typedef enum {
     LV_ICON_CHARGE,
     LV_ICON_CALCULATION = LV_ICON_BAT_FULL
 } lv_icon_battery_t;
-
 
 typedef enum {
     LV_STATUS_BAR_BATTERY_LEVEL = 0,

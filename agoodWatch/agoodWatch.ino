@@ -5,8 +5,8 @@
  * https://github.com/AlexGoodyear/TTGO_TWatch_Library
  * 
  * Derived from the SimpleWatch example in https://github.com/Xinyuan-LilyGO/TTGO_TWatch_Library
- * 
- * Original copyright below ...
+ *
+ * Original header comment below ...
 Copyright (c) 2019 lewis he
 This is just a demonstration. Most of the functions are not implemented.
 The main implementation is low-power standby. 
@@ -26,7 +26,7 @@ Created by Lewis he on October 10, 2019.
 #include <WiFi.h>
 #include "gui.h"
 
-//#define DEBUG_SERIAL_OUTPUT  1
+#define DEBUG_SERIAL_OUTPUT
 
 #ifdef DEBUG_SERIAL_OUTPUT
 #define DSERIAL(_func, ...) Serial._func (__VA_ARGS__)
@@ -69,6 +69,7 @@ void setupNetwork()
     WiFi.mode(WIFI_STA);
     WiFi.onEvent([](WiFiEvent_t event, WiFiEventInfo_t info) {
         xEventGroupClearBits(g_event_group, G_EVENT_WIFI_CONNECTED);
+        setCpuFrequencyMhz(CPU_FREQ_NORM);
     }, WiFiEvent_t::SYSTEM_EVENT_STA_DISCONNECTED);
 
     WiFi.onEvent([](WiFiEvent_t event, WiFiEventInfo_t info) {
@@ -102,11 +103,11 @@ void low_energy()
         ttgo->displaySleep();
 
         if (!WiFi.isConnected()) {
-            DSERIAL(println, "low_energy() - WiFi is off entering 2MHz mode");
+            DSERIAL(println, "low_energy() - WiFi is off entering 10MHz mode");
             delay(250);
             lenergy = true;
             WiFi.mode(WIFI_OFF);
-            setCpuFrequencyMhz (2); 
+            setCpuFrequencyMhz (CPU_FREQ_MIN); 
             gpio_wakeup_enable ((gpio_num_t)AXP202_INT, GPIO_INTR_LOW_LEVEL);
             gpio_wakeup_enable ((gpio_num_t)BMA423_INT1, GPIO_INTR_HIGH_LEVEL);
             esp_sleep_enable_gpio_wakeup ();
@@ -256,7 +257,7 @@ void loop()
     if (bits & WATCH_FLAG_SLEEP_EXIT) {
         if (lenergy) {
             lenergy = false;
-            setCpuFrequencyMhz(80); //rtc_clk_cpu_freq_set(RTC_CPU_FREQ_160M);
+            setCpuFrequencyMhz (CPU_FREQ_NORM);
         }
 
         low_energy();
@@ -302,7 +303,7 @@ void loop()
               {
                  screenTimeout = 5 * 60 * 1000;
                  torchOn();
-                 setCpuFrequencyMhz (2);
+                 setCpuFrequencyMhz (CPU_FREQ_MIN);
               }
             }
             
