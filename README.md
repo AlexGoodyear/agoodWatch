@@ -4,30 +4,42 @@
 
 <img src="https://github.com/AlexGoodyear/agoodWatch/blob/master/images/agoodWatchV02.jpg" width="300" />
 
-First ensure that you have installed the [TTGO_TWatch_Library](https://github.com/AlexGoodyear/TTGO_TWatch_Library), then put the agoodWatch directory into your Arduino sketch area.
+### Installation.
+First ensure that you have installed the [TTGO_TWatch_Library](https://github.com/AlexGoodyear/TTGO_TWatch_Library) into your Arduino/libraries directory. Next put the agoodWatch directory from this repository into your Arduino sketch area.
 
 This code is derived from the SimpleWatch example in the [Xinyuan LilyGO TTGO_TWatch GitHub repository](https://github.com/Xinyuan-LilyGO/TTGO_TWatch_Library).
 
-I have had to make some changes to the above library code for the low level access routines.
+### How to use.
+Wake the watch by ...
+1. raisning your wrist to be horizontal in front of your face with the watch screen facing up, then rotate your wrist about 25 degrees so you can see the display better - the screen should wake up.
+2 press the bezel button
+3 double tap the watch
 
-## New swipe gesture navigation controls. NOTE this required a fix to the LVGL library so you need to use my [TTGO_TWatch_Library](https://github.com/AlexGoodyear/TTGO_TWatch_Library) for V0.4 and above.
+If you cannont see the display because of bright sunlight, then double tap the watch to go to full brightness.
 
-Top menu is always watch faces
+If you double tap it again it will go into torch mode which is a white screen without the time displayed. This screen will stay active for 5 minutes or until you cancel with the bezel button.
 
-Face1 <-----> Face2 <-----> Face3    swipe left or right to change watch face
+Use the bezel button at anytime to put the watch back into sleep mode (this will also cancel any temporary brightness or tourch mode).
 
-Swipe down from any face to get to the feature menus
+Use the square button under the time to enter the settings menu. Press on the door with an arrow to return to the previous screen. Drag an icon up or down to move to another setting. Press on an icon to see more settings. Only WiFi and About are currently active in this setup menu system.
+. 
+The WiFi and ntp time settings are taken directly from the original simpleWatch code - please don't raise issues about these functions, they obviously need work and it is on my todo list. I find the ntp times can vary a bit so just cancel an obviously incorrect time and try again. The simpleWatch keyboard is also a little frustrating but I have an idea for improvement ...
 
-WiFi <-----> BlueT <-----> Setup <-----> About    swipe left or right
+### Known Issues.
+1. Most settings are hard coded - configurable settings are on my todo list.
+2. Customise your time zone setting using RTC_TIME_ZONE defined in gui.h
+3. Must use my version of [TTGO_TWatch_Library](https://github.com/AlexGoodyear/TTGO_TWatch_Library)
 
-Swipe down on any feature to get to a set of menus specfic to that item
-If there is more than one screen then swipe left and right to navigate.
-
-Swipe up to return to the previous menu level until you get back to the watch faces.
+### Currently working on.
+1. New navigation strategy using swipes/gestures. (75% done)
+2. New keyboard design (50% done)
+3. Configuration settings. (50% done)
+4. Multiple watch faces - animations and analogue. (25% done)
 
 ### Version 0.4
 1. Tweak torch mode to still display status bar (for battery monitoring).
-2. Add new swipe gesture controls and remove navigation icon buttons because screen real-estate is too valuable to waste on navigation buttons ;-)
+2. Time is now based upon time zone strings.
+3. Improve the About screen.
 
 ### Version 0.3
 1. Forgot to put an exit button on the empty "About" screen - doh!
