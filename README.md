@@ -11,9 +11,9 @@ This code is derived from the SimpleWatch example in the [Xinyuan LilyGO TTGO_TW
 
 ### How to use.
 Wake the watch by ...
-1. raisning your wrist to be horizontal in front of your face with the watch screen facing up, then rotate your wrist about 25 degrees so you can see the display better - the screen should wake up.
-2 press the bezel button
-3 double tap the watch
+1. raising your wrist to be horizontal in front of your face with the watch screen facing up, then rotate your wrist about 25 degrees so you can see the display better - the screen should wake up.
+2. press the bezel button
+3. double tap the watch
 
 If you cannont see the display because of bright sunlight, then double tap the watch to go to full brightness.
 
