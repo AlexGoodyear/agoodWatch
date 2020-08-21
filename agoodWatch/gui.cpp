@@ -541,7 +541,6 @@ void updateTime()
     time_t now;
     struct tm  info;
     char buf[64];
-    static char weekDays[7][4] = {"Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"};
     TTGOClass *ttgo = TTGOClass::getWatch();
     extern unsigned int screenTimeout;
     
@@ -550,8 +549,8 @@ void updateTime()
     strftime(buf, sizeof(buf), "%H:%M:%S", &info);
     lv_label_set_text(timeLabel, buf);
     lv_obj_align(timeLabel, NULL, LV_ALIGN_IN_TOP_MID, 0, 10);
-    strftime(buf, sizeof(buf), "%d/%m/%Y", &info);
-    lv_label_set_text_fmt(dateLabel, "%s %s", weekDays[info.tm_wday],buf);
+    strftime(buf, sizeof(buf), "%a %d/%m/%Y", &info);
+    lv_label_set_text (dateLabel, buf);
     lv_obj_align(dateLabel, NULL, LV_ALIGN_CENTER, 0, 0);
 
     if (screenTimeout == DEFAULT_SCREEN_TIMEOUT)
@@ -642,6 +641,7 @@ static void view_event_handler(lv_obj_t *obj, lv_event_t event)
  *
  */
 
+#define NEW_KBD
 
 class Keyboard
 {
@@ -682,26 +682,59 @@ public:
 
         _kbCont = lv_cont_create(parent, NULL);
         lv_obj_set_size(_kbCont, LV_HOR_RES, LV_VER_RES - 30);
+#ifdef NEW_KBD
+        lv_obj_set_pos(_kbCont, 0, 30);
+#else
         lv_obj_align(_kbCont, NULL, LV_ALIGN_CENTER, 0, 0);
+#endif  // NEW_KBD.
         lv_obj_add_style(_kbCont, LV_OBJ_PART_MAIN, &kbStyle);
 
 
+#ifdef NEW_KBD
+        _kbPage = lv_page_create(_kbCont, NULL);
+        lv_page_set_scrlbar_mode(_kbPage, LV_SCROLLBAR_MODE_OFF);
+        lv_obj_set_size (_kbPage, LV_HOR_RES, LV_VER_RES - 30 - 20);
+        lv_obj_set_pos(_kbPage, 0, 20);
+        lv_page_set_scrl_width(_kbPage,480);
+        lv_page_set_scrl_height(_kbPage,190);
+#endif  // NEW_KBD.
+
         lv_obj_t *ta = lv_textarea_create(_kbCont, NULL);
+#ifdef NEW_KBD
+        lv_obj_set_height(ta, 20);
+        lv_obj_set_pos(ta, 0, 0);
+#else
         lv_obj_set_height(ta, 40);
+#endif // NEW_KDB.
+
         lv_textarea_set_one_line(ta, true);
         lv_textarea_set_pwd_mode(ta, false);
         lv_textarea_set_text(ta, "");
-        lv_obj_align(ta, _kbCont, LV_ALIGN_IN_TOP_MID, 0, 10);
 
+#ifdef NEW_KBD
+        lv_obj_t *kb = lv_keyboard_create(_kbPage, NULL);
+        lv_obj_set_pos(ta, 0, 0);
+        lv_obj_set_height(kb, LV_VER_RES - 30 - 20);
+        lv_obj_set_width(kb, 480);
+        lv_obj_move_foreground (_kbCont);
+	      lv_obj_set_pos (kb, 0, 0);
+#else
         lv_obj_t *kb = lv_keyboard_create(_kbCont, NULL);
+        lv_obj_align(ta, _kbCont, LV_ALIGN_IN_TOP_MID, 0, 10);
         lv_keyboard_set_map(kb, LV_KEYBOARD_MODE_TEXT_LOWER, btnm_mapplus[0]);
         lv_obj_set_height(kb, LV_VER_RES / 3 * 2);
         lv_obj_set_width(kb, 240);
-        lv_obj_align(kb, _kbCont, LV_ALIGN_IN_BOTTOM_MID, 0, 0);
+        lv_obj_align(kb, NULL, LV_ALIGN_IN_BOTTOM_MID, 0, 0);
+#endif  //NEW_KBD.
+
         lv_keyboard_set_textarea(kb, ta);
 
+#ifdef NEW_KBD
         lv_obj_add_style(kb, LV_OBJ_PART_MAIN, &kbStyle);
+#else
         lv_obj_add_style(ta, LV_OBJ_PART_MAIN, &kbStyle);
+#endif  //NEW_KBD.
+        lv_obj_set_x(lv_page_get_scrllable(_kbPage), 0);
         lv_obj_set_event_cb(kb, __kb_event_cb);
 
         _kb = this;
@@ -719,17 +752,31 @@ public:
         const char *txt = lv_btnmatrix_get_active_btn_text(kb);
         if (txt == NULL) return;
         static int index = 0;
-        if (strcmp(txt, LV_SYMBOL_OK) == 0) {
+        if ((strcmp(txt, LV_SYMBOL_OK) == 0) || (strcmp(txt, "Enter") == 0) || (strcmp(txt, LV_SYMBOL_NEW_LINE) == 0)){
             strcpy(__buf, lv_textarea_get_text(ext->ta));
             if (_kb->_cb != nullptr) {
                 _kb->_cb(KB_EVENT_OK);
             }
             return;
-        } else if (strcmp(txt, "Exit") == 0) {
+        } else if ((LV_EVENT_CANCEL == event) || (strcmp(txt, LV_SYMBOL_CLOSE) == 0)) {
             if (_kb->_cb != nullptr) {
                 _kb->_cb(KB_EVENT_EXIT);
             }
             return;
+#ifdef NEW_KBD
+        } else if (strcmp(txt, LV_SYMBOL_LEFT) == 0) {
+            log_i("LV_SYMBOL_LEFT before=%d",lv_obj_get_x(lv_page_get_scrllable(_kb->_kbPage)));
+            lv_page_scroll_hor(_kb->_kbPage, lv_obj_get_x(lv_page_get_scrllable(_kb->_kbPage)) - 240);
+            delay(250);
+            log_i ("LV_SYMBOL_LEFT after=%d", lv_obj_get_x(lv_page_get_scrllable(_kb->_kbPage)));
+        } else if (strcmp(txt, LV_SYMBOL_RIGHT) == 0) {
+            log_i("LV_SYMBOL_RIGHT before=%d", lv_obj_get_x(lv_page_get_scrllable(_kb->_kbPage)));
+            lv_page_scroll_hor(_kb->_kbPage, lv_obj_get_x(lv_page_get_scrllable(_kb->_kbPage)) *-1);
+            delay(250);
+            log_i("LV_SYMBOL_RIGHT after=%d", lv_obj_get_x(lv_page_get_scrllable(_kb->_kbPage)));
+        } else {
+            lv_keyboard_def_event_cb(kb, event);
+#else
         } else if (strcmp(txt, LV_SYMBOL_RIGHT) == 0) {
             index = index + 1 >= sizeof(btnm_mapplus) / sizeof(btnm_mapplus[0]) ? 0 : index + 1;
             lv_keyboard_set_map(kb, LV_KEYBOARD_MODE_TEXT_LOWER, btnm_mapplus[index]);
@@ -738,6 +785,7 @@ public:
             lv_textarea_del_char(ext->ta);
         } else {
             lv_textarea_add_text(ext->ta, txt);
+#endif  // NEW_KBD.
         }
     }
 
@@ -757,6 +805,9 @@ public:
     }
 
 private:
+#ifdef NEW_KBD
+    lv_obj_t *_kbPage = nullptr;
+#endif  // NEW_KBD.
     lv_obj_t *_kbCont = nullptr;
     kb_event_cb _cb = nullptr;
     static const char *btnm_mapplus[10][23];

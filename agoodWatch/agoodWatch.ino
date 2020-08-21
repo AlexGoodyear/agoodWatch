@@ -26,14 +26,6 @@ Created by Lewis he on October 10, 2019.
 #include <WiFi.h>
 #include "gui.h"
 
-#define DEBUG_SERIAL_OUTPUT
-
-#ifdef DEBUG_SERIAL_OUTPUT
-#define DSERIAL(_func, ...) Serial._func (__VA_ARGS__)
-#else
-#define DSERIAL(_func, ...)
-#endif
-
 #define G_EVENT_VBUS_PLUGIN         _BV(0)
 #define G_EVENT_VBUS_REMOVE         _BV(1)
 #define G_EVENT_CHARGE_DONE         _BV(2)
@@ -89,7 +81,7 @@ void setupNetwork()
 void low_energy()
 {
     if (ttgo->bl->isOn()) {
-        DSERIAL(println, "low_energy() - BL is on");
+        log_i("low_energy() - BL is on");
         xEventGroupSetBits(isr_group, WATCH_FLAG_SLEEP_MODE);
         
         if (screenTimeout != DEFAULT_SCREEN_TIMEOUT)
@@ -103,7 +95,7 @@ void low_energy()
         ttgo->displaySleep();
 
         if (!WiFi.isConnected()) {
-            DSERIAL(println, "low_energy() - WiFi is off entering 10MHz mode");
+            log_i("low_energy() - WiFi is off entering 10MHz mode");
             delay(250);
             lenergy = true;
             WiFi.mode(WIFI_OFF);
@@ -114,7 +106,7 @@ void low_energy()
             esp_light_sleep_start();
         }
     } else {
-        DSERIAL(println, "low_energy() - BL is off");
+        log_i("low_energy() - BL is off");
         ttgo->startLvglTick();
         ttgo->displayWakeup();
         ttgo->rtc->syncToSystem();
@@ -263,14 +255,14 @@ void loop()
         low_energy();
 
         if (bits & WATCH_FLAG_BMA_IRQ) {
-          DSERIAL(println, "WATCH_FLAG_BMA_IRQ");
+          log_i("WATCH_FLAG_BMA_IRQ");
             do {
                 rlst =  ttgo->bma->readInterrupt();
             } while (!rlst);
             xEventGroupClearBits(isr_group, WATCH_FLAG_BMA_IRQ);
         }
         if (bits & WATCH_FLAG_AXP_IRQ) {
-          DSERIAL(println, "WATCH_FLAG_AXP_IRQ");
+          log_i("WATCH_FLAG_AXP_IRQ");
             ttgo->power->readIRQ();
             ttgo->power->clearIRQ();
             xEventGroupClearBits(isr_group, WATCH_FLAG_AXP_IRQ);
@@ -287,7 +279,7 @@ void loop()
     if (xQueueReceive(g_event_queue_handle, &data, 5 / portTICK_RATE_MS) == pdPASS) {
         switch (data) {
         case Q_EVENT_BMA_INT:
-          DSERIAL(println, "Q_EVENT_BMA_IRQ");
+          log_i("Q_EVENT_BMA_IRQ");
 
             do {
                 rlst =  ttgo->bma->readInterrupt();
@@ -313,7 +305,7 @@ void loop()
             }
             break;
         case Q_EVENT_AXP_INT:
-          DSERIAL(println, "Q_EVENT_AXP_INT");
+          log_i("Q_EVENT_AXP_INT");
 
             ttgo->power->readIRQ();
             if (ttgo->power->isVbusPlugInIRQ()) {

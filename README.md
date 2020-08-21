@@ -25,6 +25,8 @@ Use the square button under the time to enter the settings menu. Press on the do
 . 
 The WiFi and ntp time settings are taken directly from the original simpleWatch code - please don't raise issues about these functions, they obviously need work and it is on my todo list. I find the ntp times can vary a bit so just cancel an obviously incorrect time and try again. The simpleWatch keyboard is also a little frustrating but I have an idea for improvement ...
 
+The new keyboard is now split over 2 screens that are side by side. Press the arrow button at the base of the keyboard to shift to the other screen. Use the "ABC"/"abc" button to move between lower and upper case characters. Use the "1#" button to change the keyboard over to numbers and punctuation characters. The "abc" button will return to the normal alphabet characters. The cross ("X") in the lower left will abandon any input and the carriage return and tick characters on the right of the keyboard will enter the typed text.
+
 ### Known Issues.
 1. Most settings are hard coded - configurable settings are on my todo list.
 2. Customise your time zone setting using RTC_TIME_ZONE defined in gui.h
@@ -32,9 +34,11 @@ The WiFi and ntp time settings are taken directly from the original simpleWatch 
 
 ### Currently working on.
 1. New navigation strategy using swipes/gestures. (75% done)
-2. New keyboard design (50% done)
-3. Configuration settings. (50% done)
-4. Multiple watch faces - animations and analogue. (25% done)
+2. Configuration settings. (50% done)
+3. Multiple watch faces - animations and analogue. (25% done)
+
+### Version 0.5
+1. New keyboard design - this was much more work than the code changes reflect!
 
 ### Version 0.4
 1. Tweak torch mode to still display status bar (for battery monitoring).

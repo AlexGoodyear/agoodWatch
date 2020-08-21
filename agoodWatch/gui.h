@@ -15,7 +15,7 @@ Created by Lewis he on October 10, 2019.
 #define STR(_s) XSTR(_s)
 #define XSTR(_s) #_s
 
-#define THIS_VERSION_ID  0.4
+#define THIS_VERSION_ID  0.5
 #define THIS_VERSION_STR "Ver " STR(THIS_VERSION_ID)
 
 /*
@@ -67,4 +67,7 @@ void updateTime();
 void torchOn();
 void torchOff();
 
+extern "C" {
+    extern void lv_keyboard_def_event_cb(lv_obj_t * kb, lv_event_t event);
+}
 #endif /*__GUI_H */
