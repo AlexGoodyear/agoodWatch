@@ -517,7 +517,6 @@ void setupGui()
     lv_style_set_text_color(&style_pr, LV_OBJ_PART_MAIN, lv_color_hex3(0xaaa));
 
     menuBtn = lv_imgbtn_create(mainBar, NULL);
-    lv_imgbtn_set_src(menuBtn, LV_BTN_STATE_ACTIVE, &menu);
     lv_imgbtn_set_src(menuBtn, LV_BTN_STATE_RELEASED, &menu);
     lv_imgbtn_set_src(menuBtn, LV_BTN_STATE_PRESSED, &menu);
     lv_imgbtn_set_src(menuBtn, LV_BTN_STATE_CHECKED_RELEASED, &menu);
@@ -734,7 +733,7 @@ public:
 #else
         lv_obj_add_style(ta, LV_OBJ_PART_MAIN, &kbStyle);
 #endif  //NEW_KBD.
-        lv_obj_set_x(lv_page_get_scrllable(_kbPage), 0);
+        lv_obj_set_x(lv_page_get_scrollable(_kbPage), 0);
         lv_obj_set_event_cb(kb, __kb_event_cb);
 
         _kb = this;
@@ -765,15 +764,15 @@ public:
             return;
 #ifdef NEW_KBD
         } else if (strcmp(txt, LV_SYMBOL_LEFT) == 0) {
-            log_i("LV_SYMBOL_LEFT before=%d",lv_obj_get_x(lv_page_get_scrllable(_kb->_kbPage)));
-            lv_page_scroll_hor(_kb->_kbPage, lv_obj_get_x(lv_page_get_scrllable(_kb->_kbPage)) - 240);
+            log_i("LV_SYMBOL_LEFT before=%d",lv_obj_get_x(lv_page_get_scrollable(_kb->_kbPage)));
+            lv_page_scroll_hor(_kb->_kbPage, lv_obj_get_x(lv_page_get_scrollable(_kb->_kbPage)) - 240);
             delay(250);
-            log_i ("LV_SYMBOL_LEFT after=%d", lv_obj_get_x(lv_page_get_scrllable(_kb->_kbPage)));
+            log_i ("LV_SYMBOL_LEFT after=%d", lv_obj_get_x(lv_page_get_scrollable(_kb->_kbPage)));
         } else if (strcmp(txt, LV_SYMBOL_RIGHT) == 0) {
-            log_i("LV_SYMBOL_RIGHT before=%d", lv_obj_get_x(lv_page_get_scrllable(_kb->_kbPage)));
-            lv_page_scroll_hor(_kb->_kbPage, lv_obj_get_x(lv_page_get_scrllable(_kb->_kbPage)) *-1);
+            log_i("LV_SYMBOL_RIGHT before=%d", lv_obj_get_x(lv_page_get_scrollable(_kb->_kbPage)));
+            lv_page_scroll_hor(_kb->_kbPage, lv_obj_get_x(lv_page_get_scrollable(_kb->_kbPage)) *-1);
             delay(250);
-            log_i("LV_SYMBOL_RIGHT after=%d", lv_obj_get_x(lv_page_get_scrllable(_kb->_kbPage)));
+            log_i("LV_SYMBOL_RIGHT after=%d", lv_obj_get_x(lv_page_get_scrollable(_kb->_kbPage)));
         } else {
             lv_keyboard_def_event_cb(kb, event);
 #else
@@ -939,7 +938,6 @@ public:
             lv_label_set_text(la1, cfg[i].name);
             i == 0 ? lv_obj_align(la1, NULL, LV_ALIGN_IN_TOP_LEFT, 30, 20) : lv_obj_align(la1, prev, LV_ALIGN_OUT_BOTTOM_MID, 0, 20);
             _sw[i] = lv_imgbtn_create(_swCont, NULL);
-            lv_imgbtn_set_src(_sw[i], LV_BTN_STATE_ACTIVE, &off);
             lv_imgbtn_set_src(_sw[i], LV_BTN_STATE_RELEASED, &off);
             lv_imgbtn_set_src(_sw[i], LV_BTN_STATE_PRESSED, &off);
             lv_imgbtn_set_src(_sw[i], LV_BTN_STATE_CHECKED_RELEASED, &off);
@@ -951,7 +949,6 @@ public:
         }
 
         _exitBtn = lv_imgbtn_create(_swCont, NULL);
-        lv_imgbtn_set_src(_exitBtn, LV_BTN_STATE_ACTIVE, &iexit);
         lv_imgbtn_set_src(_exitBtn, LV_BTN_STATE_RELEASED, &iexit);
         lv_imgbtn_set_src(_exitBtn, LV_BTN_STATE_PRESSED, &iexit);
         lv_imgbtn_set_src(_exitBtn, LV_BTN_STATE_CHECKED_RELEASED, &iexit);
@@ -991,7 +988,6 @@ public:
                     const void *src =  lv_imgbtn_get_src(sw, LV_BTN_STATE_RELEASED);
                     const void *dst = src == &off ? &on : &off;
                     bool en = src == &off;
-                    lv_imgbtn_set_src(sw, LV_BTN_STATE_ACTIVE, dst);
                     lv_imgbtn_set_src(sw, LV_BTN_STATE_RELEASED, dst);
                     lv_imgbtn_set_src(sw, LV_BTN_STATE_PRESSED, dst);
                     lv_imgbtn_set_src(sw, LV_BTN_STATE_CHECKED_RELEASED, dst);
@@ -1010,7 +1006,6 @@ public:
         if (index > _count)return;
         lv_obj_t *sw = _sw[index];
         const void *dst =  en ? &on : &off;
-        lv_imgbtn_set_src(sw, LV_BTN_STATE_ACTIVE, dst);
         lv_imgbtn_set_src(sw, LV_BTN_STATE_RELEASED, dst);
         lv_imgbtn_set_src(sw, LV_BTN_STATE_PRESSED, dst);
         lv_imgbtn_set_src(sw, LV_BTN_STATE_CHECKED_RELEASED, dst);
@@ -1654,7 +1649,6 @@ static void about_event_cb()
     lv_obj_add_style (about, LV_OBJ_PART_MAIN, &barStyle);
 
     _exitBtn = lv_imgbtn_create (about, NULL);
-    lv_imgbtn_set_src(_exitBtn, LV_BTN_STATE_ACTIVE, &iexit);
     lv_imgbtn_set_src(_exitBtn, LV_BTN_STATE_RELEASED, &iexit);
     lv_imgbtn_set_src(_exitBtn, LV_BTN_STATE_PRESSED, &iexit);
     lv_imgbtn_set_src(_exitBtn, LV_BTN_STATE_CHECKED_RELEASED, &iexit);
