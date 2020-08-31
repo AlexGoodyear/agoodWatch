@@ -22,9 +22,6 @@ LV_IMG_DECLARE(bg);
 LV_IMG_DECLARE(bg1);
 LV_IMG_DECLARE(bg2);
 LV_IMG_DECLARE(bg3);
-LV_IMG_DECLARE(WALLPAPER_1_IMG);
-LV_IMG_DECLARE(WALLPAPER_2_IMG);
-LV_IMG_DECLARE(WALLPAPER_3_IMG);
 LV_IMG_DECLARE(step);
 LV_IMG_DECLARE(menu);
 
@@ -640,8 +637,6 @@ static void view_event_handler(lv_obj_t *obj, lv_event_t event)
  *
  */
 
-#define NEW_KBD
-
 class Keyboard
 {
 public:
@@ -681,58 +676,35 @@ public:
 
         _kbCont = lv_cont_create(parent, NULL);
         lv_obj_set_size(_kbCont, LV_HOR_RES, LV_VER_RES - 30);
-#ifdef NEW_KBD
         lv_obj_set_pos(_kbCont, 0, 30);
-#else
-        lv_obj_align(_kbCont, NULL, LV_ALIGN_CENTER, 0, 0);
-#endif  // NEW_KBD.
         lv_obj_add_style(_kbCont, LV_OBJ_PART_MAIN, &kbStyle);
 
 
-#ifdef NEW_KBD
         _kbPage = lv_page_create(_kbCont, NULL);
         lv_page_set_scrlbar_mode(_kbPage, LV_SCROLLBAR_MODE_OFF);
         lv_obj_set_size (_kbPage, LV_HOR_RES, LV_VER_RES - 30 - 20);
         lv_obj_set_pos(_kbPage, 0, 20);
         lv_page_set_scrl_width(_kbPage,480);
         lv_page_set_scrl_height(_kbPage,190);
-#endif  // NEW_KBD.
 
         lv_obj_t *ta = lv_textarea_create(_kbCont, NULL);
-#ifdef NEW_KBD
         lv_obj_set_height(ta, 20);
         lv_obj_set_pos(ta, 0, 0);
-#else
-        lv_obj_set_height(ta, 40);
-#endif // NEW_KDB.
 
         lv_textarea_set_one_line(ta, true);
         lv_textarea_set_pwd_mode(ta, false);
         lv_textarea_set_text(ta, "");
 
-#ifdef NEW_KBD
         lv_obj_t *kb = lv_keyboard_create(_kbPage, NULL);
         lv_obj_set_pos(ta, 0, 0);
         lv_obj_set_height(kb, LV_VER_RES - 30 - 20);
         lv_obj_set_width(kb, 480);
         lv_obj_move_foreground (_kbCont);
 	      lv_obj_set_pos (kb, 0, 0);
-#else
-        lv_obj_t *kb = lv_keyboard_create(_kbCont, NULL);
-        lv_obj_align(ta, _kbCont, LV_ALIGN_IN_TOP_MID, 0, 10);
-        lv_keyboard_set_map(kb, LV_KEYBOARD_MODE_TEXT_LOWER, btnm_mapplus[0]);
-        lv_obj_set_height(kb, LV_VER_RES / 3 * 2);
-        lv_obj_set_width(kb, 240);
-        lv_obj_align(kb, NULL, LV_ALIGN_IN_BOTTOM_MID, 0, 0);
-#endif  //NEW_KBD.
 
         lv_keyboard_set_textarea(kb, ta);
 
-#ifdef NEW_KBD
         lv_obj_add_style(kb, LV_OBJ_PART_MAIN, &kbStyle);
-#else
-        lv_obj_add_style(ta, LV_OBJ_PART_MAIN, &kbStyle);
-#endif  //NEW_KBD.
         lv_obj_set_x(lv_page_get_scrollable(_kbPage), 0);
         lv_obj_set_event_cb(kb, __kb_event_cb);
 
@@ -762,7 +734,6 @@ public:
                 _kb->_cb(KB_EVENT_EXIT);
             }
             return;
-#ifdef NEW_KBD
         } else if (strcmp(txt, LV_SYMBOL_LEFT) == 0) {
             log_i("LV_SYMBOL_LEFT before=%d",lv_obj_get_x(lv_page_get_scrollable(_kb->_kbPage)));
             lv_page_scroll_hor(_kb->_kbPage, lv_obj_get_x(lv_page_get_scrollable(_kb->_kbPage)) - 240);
@@ -775,16 +746,6 @@ public:
             log_i("LV_SYMBOL_RIGHT after=%d", lv_obj_get_x(lv_page_get_scrollable(_kb->_kbPage)));
         } else {
             lv_keyboard_def_event_cb(kb, event);
-#else
-        } else if (strcmp(txt, LV_SYMBOL_RIGHT) == 0) {
-            index = index + 1 >= sizeof(btnm_mapplus) / sizeof(btnm_mapplus[0]) ? 0 : index + 1;
-            lv_keyboard_set_map(kb, LV_KEYBOARD_MODE_TEXT_LOWER, btnm_mapplus[index]);
-            return;
-        } else if (strcmp(txt, "Del") == 0) {
-            lv_textarea_del_char(ext->ta);
-        } else {
-            lv_textarea_add_text(ext->ta, txt);
-#endif  // NEW_KBD.
         }
     }
 
@@ -804,80 +765,16 @@ public:
     }
 
 private:
-#ifdef NEW_KBD
     lv_obj_t *_kbPage = nullptr;
-#endif  // NEW_KBD.
     lv_obj_t *_kbCont = nullptr;
     kb_event_cb _cb = nullptr;
     static const char *btnm_mapplus[10][23];
     static Keyboard *_kb;
     static char __buf[128];
 };
-char Keyboard::__buf[128];
-Keyboard *Keyboard::_kb = nullptr;
-const char *Keyboard::btnm_mapplus[10][23] = {
-    {
-        "a", "b", "c",   "\n",
-        "d", "e", "f",   "\n",
-        "g", "h", "i",   "\n",
-        LV_SYMBOL_OK, "Del", "Exit", LV_SYMBOL_RIGHT, ""
-    },
-    {
-        "j", "k", "l", "\n",
-        "n", "m", "o",  "\n",
-        "p", "q", "r",  "\n",
-        LV_SYMBOL_OK, "Del", "Exit", LV_SYMBOL_RIGHT, ""
-    },
-    {
-        "s", "t", "u",   "\n",
-        "v", "w", "x", "\n",
-        "y", "z", " ", "\n",
-        LV_SYMBOL_OK, "Del", "Exit", LV_SYMBOL_RIGHT, ""
-    },
-    {
-        "A", "B", "C",  "\n",
-        "D", "E", "F",   "\n",
-        "G", "H", "I",  "\n",
-        LV_SYMBOL_OK, "Del", "Exit", LV_SYMBOL_RIGHT, ""
-    },
-    {
-        "J", "K", "L", "\n",
-        "N", "M", "O",  "\n",
-        "P", "Q", "R", "\n",
-        LV_SYMBOL_OK, "Del", "Exit", LV_SYMBOL_RIGHT, ""
-    },
-    {
-        "S", "T", "U",   "\n",
-        "V", "W", "X",   "\n",
-        "Y", "Z", " ", "\n",
-        LV_SYMBOL_OK, "Del", "Exit", LV_SYMBOL_RIGHT, ""
-    },
-    {
-        "1", "2", "3",  "\n",
-        "4", "5", "6",  "\n",
-        "7", "8", "9",  "\n",
-        LV_SYMBOL_OK, "Del", "Exit", LV_SYMBOL_RIGHT, ""
-    },
-    {
-        "0", "+", "-",  "\n",
-        "/", "*", "=",  "\n",
-        "!", "?", "#",  "\n",
-        LV_SYMBOL_OK, "Del", "Exit", LV_SYMBOL_RIGHT, ""
-    },
-    {
-        "<", ">", "@",  "\n",
-        "%", "$", "(",  "\n",
-        ")", "{", "}",  "\n",
-        LV_SYMBOL_OK, "Del", "Exit", LV_SYMBOL_RIGHT, ""
-    },
-    {
-        "[", "]", ";",  "\n",
-        "\"", "'", ".", "\n",
-        ",", ":",  " ", "\n",
-        LV_SYMBOL_OK, "Del", "Exit", LV_SYMBOL_RIGHT, ""
-    }
-};
 
+Keyboard *Keyboard::_kb = nullptr;
+char Keyboard::__buf[128];
 
 /*****************************************************************
  *
@@ -1261,9 +1158,6 @@ private:
     lv_obj_t *_mbox = nullptr;
 };
 
-
-
-
 /*****************************************************************
  *
  *          ! GLOBAL VALUE
@@ -1522,7 +1416,6 @@ static void wifi_destory()
     globalIndex--;
 }
 
-
 /*****************************************************************
  *
  *          !SETTING EVENT
@@ -1608,7 +1501,6 @@ static void destory_mbox()
  *
  *          About EVENT
  *
- * This is an experiment trying to use the table widget - it isn't really suitable
  * Need to develop a more generic widget container that combines List, Table and 
  * ButtonMatrix widgets - probably based upon the Switch and List classes in this
  * gui.cpp file.

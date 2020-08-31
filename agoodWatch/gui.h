@@ -15,7 +15,7 @@ Created by Lewis he on October 10, 2019.
 #define STR(_s) XSTR(_s)
 #define XSTR(_s) #_s
 
-#define THIS_VERSION_ID  0.5
+#define THIS_VERSION_ID  0.6
 #define THIS_VERSION_STR "Ver " STR(THIS_VERSION_ID)
 
 /*
