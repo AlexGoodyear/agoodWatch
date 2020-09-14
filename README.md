@@ -21,14 +21,16 @@ If you double tap it again it will go into torch mode which is a white screen wi
 
 Use the bezel button at anytime to put the watch back into sleep mode (this will also cancel any temporary brightness or tourch mode).
 
+### New navigation method.
 All navigation is now done using swipes. I find the best way to perform a swipe is to start on the metal bezel and then swipe acros the screen to the opposite metal bezel quite slowly - it should take you about 1 whole second. If you swipe too fast the watch will not recognise it - slow down.
 
+### Watch faces.
 The watch faces (currently 2) are in the top row, so to go from the default digital display, put your finger on the right hand side and swipe slowly left to get to the next watch face. To make this watch face the new default, perform a long press in the centre of the screen until you feel the watch react. After a new face has been selected you will be at the left most watch face again.
 
 To get to the WiFi and About menus you must start from the left most watch face and swipe up. You can swipe left from each new menu icon. To go back to the current watch face, swipe right until you get back to the menu icon and then down to return to the watch faces.
 
 This is a "map" of the current screens ...
-
+```
 [Face 1]---[Face 2]
    |
    |
@@ -36,7 +38,7 @@ This is a "map" of the current screens ...
    |				   are popups and not part of the swipe system
    |
 [About icon]---[About text]
-
+```
 The WiFi and ntp time settings are still taken directly from the original simpleWatch code - please don't raise issues about these functions, they obviously need work and it is on my todo list. I find the ntp times can vary a bit so just cancel an obviously incorrect time and try again.
 
 The new keyboard is now split over 2 screens that are side by side. Press the arrow button at the base of the keyboard to shift to the other screen. Use the "ABC"/"abc" button to move between lower and upper case characters. Use the "1#" button to change the keyboard over to numbers and punctuation characters. The "abc" button will return to the normal alphabet characters. The cross ("X") in the lower left will abandon any input and the carriage return and tick characters on the right of the keyboard will enter the typed text.
