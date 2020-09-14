@@ -1,9 +1,8 @@
-# agoodWatch	<a href="https://www.buymeacoffee.com/alexgoodyear" target="_blank"><img src="https://img.shields.io/badge/Buy%20me%20a%20coffee-%E2%82%AC5-orange?style=for-the-badge&logo=buy-me-a-coffee" /></a>
+# agoodWatch	<a href="https://www.buymeacoffee.com/alexgoodyear" target="_blank"><img src="https://img.shields.io/badge/Buy%20me%20a%20coffee-£3-orange?style=for-the-badge&logo=buy-me-a-coffee" /></a>
 
 ## A TTGO-T-Watch-2020 Arduino sketch
 
-<img src="https://github.com/AlexGoodyear/agoodWatch/blob/master/images/agoodWatchV02.jpg" width="300" />
-<img src="https://github.com/AlexGoodyear/agoodWatch/blob/master/images/agoodWatchV06.jpg" width="300" />
+<img src="https://github.com/AlexGoodyear/agoodWatch/blob/master/images/agoodWatchV02.jpg" width="300" /> <img src="https://github.com/AlexGoodyear/agoodWatch/blob/master/images/agoodWatchV06.jpg" width="250" />
 
 ### Installation.
 First ensure that you have installed the [TTGO_TWatch_Library](https://github.com/AlexGoodyear/TTGO_TWatch_Library) into your Arduino/libraries directory. Next put the agoodWatch directory from this repository into your Arduino sketch area.
