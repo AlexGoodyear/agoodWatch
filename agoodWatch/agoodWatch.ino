@@ -55,7 +55,7 @@ bool lenergy = false;
 TTGOClass *ttgo;
 lv_icon_battery_t batState = LV_ICON_CALCULATION;
 
-unsigned int defaultCpuFrequency;
+unsigned int defaultCpuFrequency = CPU_FREQ_NORM;
 unsigned int defaultScreenTimeout = DEFAULT_SCREEN_TIMEOUT;
 unsigned int screenTimeout = DEFAULT_SCREEN_TIMEOUT;
 
