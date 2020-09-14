@@ -57,6 +57,22 @@ typedef enum {
     LV_STATUS_BAR_BLUETOOTH = 3,
 } lv_icon_status_bar_t;
 
+/*
+** I know it is a bit odd to split col and row but it simplifies the
+** initialisation declarations in the code.
+*/
+typedef struct 
+{
+  int        col;             // x
+  int      (*create)   (int);
+  int        row;             // y
+  int      (*onEntry)  (int);
+  int      (*onExit)   (int);
+  int      (*onUpdate) (int);
+  lv_obj_t  *tile;
+  void      *data;
+} TileDesc_t;
+
 void setupGui();
 void updateStepCounter(uint32_t counter);
 void updateBatteryIcon(lv_icon_battery_t index);
@@ -66,6 +82,10 @@ void updateBatteryLevel();
 void updateTime();
 void torchOn();
 void torchOff();
+
+extern unsigned int screenTimeout;
+extern unsigned int defaultScreenTimeout;
+extern unsigned int defaultCpuFrequency;
 
 extern "C" {
     extern void lv_keyboard_def_event_cb(lv_obj_t * kb, lv_event_t event);

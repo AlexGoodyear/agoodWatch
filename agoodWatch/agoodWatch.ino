@@ -54,6 +54,9 @@ EventGroupHandle_t isr_group = NULL;
 bool lenergy = false;
 TTGOClass *ttgo;
 lv_icon_battery_t batState = LV_ICON_CALCULATION;
+
+unsigned int defaultCpuFrequency;
+unsigned int defaultScreenTimeout = DEFAULT_SCREEN_TIMEOUT;
 unsigned int screenTimeout = DEFAULT_SCREEN_TIMEOUT;
 
 void setupNetwork()
@@ -61,7 +64,7 @@ void setupNetwork()
     WiFi.mode(WIFI_STA);
     WiFi.onEvent([](WiFiEvent_t event, WiFiEventInfo_t info) {
         xEventGroupClearBits(g_event_group, G_EVENT_WIFI_CONNECTED);
-        setCpuFrequencyMhz(CPU_FREQ_NORM);
+        setCpuFrequencyMhz(defaultCpuFrequency);
     }, WiFiEvent_t::SYSTEM_EVENT_STA_DISCONNECTED);
 
     WiFi.onEvent([](WiFiEvent_t event, WiFiEventInfo_t info) {
@@ -84,7 +87,7 @@ void low_energy()
         log_i("low_energy() - BL is on");
         xEventGroupSetBits(isr_group, WATCH_FLAG_SLEEP_MODE);
         
-        if (screenTimeout != DEFAULT_SCREEN_TIMEOUT)
+        if (screenTimeout != defaultScreenTimeout)
         {
           torchOff();
         }
@@ -117,7 +120,7 @@ void low_energy()
         lv_disp_trig_activity(NULL);
         ttgo->openBL();
         ttgo->bma->enableStepCountInterrupt(true);
-        screenTimeout = DEFAULT_SCREEN_TIMEOUT;
+        screenTimeout = defaultScreenTimeout;
     }
 }
 
@@ -150,6 +153,7 @@ void setup()
 
     //Initialize lvgl
     ttgo->lvgl_begin();
+    ttgo->motor_begin();
 
     //Initialize bma423
     ttgo->bma->begin();
@@ -249,7 +253,7 @@ void loop()
     if (bits & WATCH_FLAG_SLEEP_EXIT) {
         if (lenergy) {
             lenergy = false;
-            setCpuFrequencyMhz (CPU_FREQ_NORM);
+            setCpuFrequencyMhz (defaultCpuFrequency);
         }
 
         low_energy();
@@ -286,7 +290,7 @@ void loop()
             } while (!rlst);
 
             if (ttgo->bma->isDoubleClick()) {
-              if (screenTimeout == DEFAULT_SCREEN_TIMEOUT)
+              if (screenTimeout == defaultScreenTimeout)
               {
                 screenTimeout--;
                 ttgo->setBrightness(255);
@@ -329,6 +333,9 @@ void loop()
             break;
         case Q_EVENT_WIFI_SCAN_DONE: {
             int16_t len =  WiFi.scanComplete();
+
+            log_d ("WiFi scan done len=%d", len);
+
             for (int i = 0; i < len; ++i) {
                 wifi_list_add(WiFi.SSID(i).c_str());
             }

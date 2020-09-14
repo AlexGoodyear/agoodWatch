@@ -18,32 +18,32 @@ Created by Lewis he on October 10, 2019.
 #include <Ticker.h>
 
 LV_FONT_DECLARE(Ubuntu);
-LV_IMG_DECLARE(bg);
-LV_IMG_DECLARE(bg1);
+
 LV_IMG_DECLARE(bg2);
-LV_IMG_DECLARE(bg3);
-LV_IMG_DECLARE(step);
-LV_IMG_DECLARE(menu);
+LV_IMG_DECLARE(foot_16px);
+LV_IMG_DECLARE(homerFace);
+LV_IMG_DECLARE(hourHand);
+LV_IMG_DECLARE(minHand);
+LV_IMG_DECLARE(secHand);
+LV_IMG_DECLARE(eye);
 
 LV_IMG_DECLARE(wifi);
-LV_IMG_DECLARE(bluetooth);
-LV_IMG_DECLARE(setting);
 LV_IMG_DECLARE(on);
 LV_IMG_DECLARE(off);
 LV_IMG_DECLARE(level1);
 LV_IMG_DECLARE(level2);
 LV_IMG_DECLARE(level3);
-LV_IMG_DECLARE(iexit);
 LV_IMG_DECLARE(modules); // AKA About!
 
 extern EventGroupHandle_t g_event_group;
 extern QueueHandle_t g_event_queue_handle;
 
 static lv_style_t settingStyle;
+
 static lv_obj_t *mainBar = nullptr;
+
 static lv_style_t mainStyle;
-static lv_obj_t *timeLabel = nullptr;
-static lv_obj_t *dateLabel = nullptr;
+
 static lv_obj_t *menuBtn = nullptr;
 static lv_obj_t *torchLabel = nullptr;
 
@@ -51,20 +51,21 @@ static uint8_t globalIndex = 0;
 
 static void lv_update_task(struct _lv_task_t *);
 static void lv_battery_task(struct _lv_task_t *);
-static void view_event_handler(lv_obj_t *obj, lv_event_t event);
 
-static void wifi_event_cb();
-static void setting_event_cb();
-static void bluetooth_event_cb();
-static void about_event_cb();
-static void wifi_destory();
+static int createOriginalFace (int);
+static int updateOriginalFace (int);
+static int createHomerFace (int);
+static int createWiFi (int);
+static int createWiFiSwitches (int);
+static int createAbout (int);
+static int createAboutInfo (int);
 
 #ifdef DEBUG_EVENTS
 #define DEBUG_EVENTS
 /*
  * This is for debugging the LVGL library, requires LV_USE_LOG setting in lv_conf.h
  */
-void my_log_cb(lv_log_level_t level, const char * file, int line, const char * fn_name, const char * dsc)
+void my_log_cb (lv_log_level_t level, const char * file, int line, const char * fn_name, const char * dsc)
 {
   /*Send the logs via serial port*/
   if(level == LV_LOG_LEVEL_ERROR) Serial.print("ERROR: ");
@@ -75,74 +76,88 @@ void my_log_cb(lv_log_level_t level, const char * file, int line, const char * f
   Serial.printf("%s:%d:%s: %s\n", file, line, fn_name, dsc);
 }
 
-static void my_test_event_cb(lv_obj_t * obj, lv_event_t event)
-{
-    Serial.printf ("my_test_event (%p, %d) : ", obj, event);
+static char *decodeEvent (lv_event_t event);
 
+static void my_test_event_cb (lv_obj_t * obj, lv_event_t event)
+{
+  log_d ("obj=%p, event=%d: %s", obj, event, decodeEvent (event));
+}
+#endif  // DEBUG_EVENTS.
+
+static char *decodeEvent (lv_event_t event)
+{
     switch(event) {
         case LV_EVENT_PRESSED:
-            Serial.println("LV_EVENT_PRESSED");
-            break;
+            return ("LV_EVENT_PRESSED");
 
         case LV_EVENT_PRESSING:
-            Serial.println("LV_EVENT_PRESSING");
-            break;
+            return ("LV_EVENT_PRESSING");
 
         case LV_EVENT_PRESS_LOST:
-            Serial.println("LV_EVENT_PRESS_LOST");
-            break;
+            return ("LV_EVENT_PRESS_LOST");
 
         case LV_EVENT_SHORT_CLICKED:
-            Serial.println("LV_EVENT_SHORT_CLICKED");
-            break;
+            return ("LV_EVENT_SHORT_CLICKED");
 
         case LV_EVENT_CLICKED:
-            Serial.println("LV_EVENT_CLICKED");
-            break;
+            return ("LV_EVENT_CLICKED");
 
         case LV_EVENT_LONG_PRESSED:
-            Serial.println("LV_EVENT_LONG_PRESSED");
-            break;
+            return ("LV_EVENT_LONG_PRESSED");
 
         case LV_EVENT_LONG_PRESSED_REPEAT:
-            Serial.println("LV_EVENT_LONG_PRESSED_REPEAT");
-            break;
+            return ("LV_EVENT_LONG_PRESSED_REPEAT");
 
         case LV_EVENT_RELEASED:
-            Serial.println("LV_EVENT_RELEASED");
-            break;
+            return ("LV_EVENT_RELEASED");
 
         case LV_EVENT_DRAG_BEGIN:
-            Serial.println("LV_EVENT_DRAG_BEGIN");
-            break;
+            return ("LV_EVENT_DRAG_BEGIN");
 
         case LV_EVENT_DRAG_END:
-            Serial.println("LV_EVENT_DRAG_END");
-            break;
+            return ("LV_EVENT_DRAG_END");
 
         case LV_EVENT_DRAG_THROW_BEGIN:
-            Serial.println("LV_EVENT_DRAG_THROW_BEGIN");
-            break;
+            return ("LV_EVENT_DRAG_THROW_BEGIN");
 
         case LV_EVENT_GESTURE:
-            Serial.printf("LV_EVENT_GESTURE dir=%d\n", (int)lv_indev_get_gesture_dir(lv_indev_get_act()));
-            break;
+            log_d ("dir=%d\n", (int)lv_indev_get_gesture_dir(lv_indev_get_act()));
+            return ("LV_EVENT_GESTURE");
 
         case LV_EVENT_KEY:
-            Serial.println("LV_EVENT_KEY");
-            break;
+            return ("LV_EVENT_KEY");
+
         case LV_EVENT_FOCUSED:
-            Serial.println("LV_EVENT_FOCUSED");
-            break;
+            return ("LV_EVENT_FOCUSED");
+
         case LV_EVENT_DEFOCUSED:
-            Serial.println("LV_EVENT_DEFOCUSED");
-            break;
+            return ("LV_EVENT_DEFOCUSED");
+
         case LV_EVENT_LEAVE:
-            Serial.println("LV_EVENT_LEAVE");
-            break;
+            return ("LV_EVENT_LEAVE");
+
+        case LV_EVENT_VALUE_CHANGED:
+            return ("LV_EVENT_VALUE_CHANGED");
+
+        case LV_EVENT_INSERT:
+            return ("LV_EVENT_INSERT");
+
+        case LV_EVENT_REFRESH:
+            return ("LV_EVENT_REFRESH");
+
+        case LV_EVENT_APPLY:
+            return ("LV_EVENT_APPLY");
+
+        case LV_EVENT_CANCEL:
+            return ("LV_EVENT_CANCEL");
+
+        case LV_EVENT_DELETE:
+            return ("LV_EVENT_DELETE");
+
+        default:
+            return ("Unknown event");
     }
 }
-#endif
 
 class StatusBar
 {
@@ -188,7 +203,7 @@ public:
 
         //step counter
         _array[4].icon = lv_img_create(_bar, NULL);
-        lv_img_set_src(_array[4].icon, &step);
+        lv_img_set_src(_array[4].icon, &foot_16px);
         lv_obj_align(_array[4].icon, _bar, LV_ALIGN_IN_LEFT_MID, 10, 0);
 
         _array[5].icon = lv_label_create(_bar, NULL);
@@ -262,145 +277,146 @@ private:
     const int8_t iconOffset = -5;
 };
 
-class MenuBar
-{
-public:
-    typedef struct {
-        const char *name;
-        void *img;
-        void (*event_cb)();
-    } lv_menu_config_t;
-
-    MenuBar()
-    {
-        _cont = nullptr;
-        _view = nullptr;
-        _exit = nullptr;
-        _obj = nullptr;
-        _vp = nullptr;
-    };
-    ~MenuBar() {};
-
-    void createMenu(lv_menu_config_t *config, int count, lv_event_cb_t event_cb, int direction = 1)
-    {
-        static lv_style_t menuStyle;
-        lv_style_init(&menuStyle);
-        lv_style_set_radius(&menuStyle, LV_OBJ_PART_MAIN, 0);
-        lv_style_set_bg_color(&menuStyle, LV_OBJ_PART_MAIN, LV_COLOR_GRAY);
-        lv_style_set_bg_opa(&menuStyle, LV_OBJ_PART_MAIN, LV_OPA_0);
-        lv_style_set_border_width(&menuStyle, LV_OBJ_PART_MAIN, 0);
-        lv_style_set_text_color(&menuStyle, LV_OBJ_PART_MAIN, LV_COLOR_WHITE);
-        lv_style_set_image_recolor(&menuStyle, LV_OBJ_PART_MAIN, LV_COLOR_WHITE);
-
-        _count = count;
-
-        _vp = new lv_point_t [count];
-
-        _obj = new lv_obj_t *[count];
-
-        for (int i = 0; i < count; i++) {
-            if (direction) {
-                _vp[i].x = 0;
-                _vp[i].y = i;
-            } else {
-                _vp[i].x = i;
-                _vp[i].y = 0;
-            }
-        }
-
-        _cont = lv_cont_create(lv_scr_act(), NULL);
-        lv_obj_set_size(_cont, LV_HOR_RES, LV_VER_RES - 30);
-        lv_obj_align(_cont, NULL, LV_ALIGN_OUT_BOTTOM_MID, 0, 0);
-        lv_obj_add_style(_cont, LV_OBJ_PART_MAIN, &menuStyle);
-        
-        _view = lv_tileview_create(_cont, NULL);
-        lv_tileview_set_valid_positions(_view, _vp, count );
-        lv_tileview_set_edge_flash(_view, false);
-        lv_obj_align(_view, NULL, LV_ALIGN_CENTER, 0, 0);
-        lv_page_set_scrlbar_mode(_view, LV_SCRLBAR_MODE_OFF);
-        lv_obj_add_style(_view, LV_OBJ_PART_MAIN, &menuStyle);
-
-        lv_coord_t _w = lv_obj_get_width(_view) ;
-        lv_coord_t _h = lv_obj_get_height(_view);
-
-        for (int i = 0; i < count; i++) {
-            _obj[i] = lv_cont_create(_view, _view);
-            lv_obj_set_size(_obj[i], _w, _h);
-
-            lv_obj_t *img = lv_img_create(_obj[i], NULL);
-            lv_img_set_src(img, config[i].img);
-            lv_obj_align(img, _obj[i], LV_ALIGN_CENTER, 0, 0);
-
-            lv_obj_t *label = lv_label_create(_obj[i], NULL);
-            lv_label_set_text(label, config[i].name);
-            lv_obj_align(label, img, LV_ALIGN_OUT_BOTTOM_MID, 0, 0);
-
-
-            i == 0 ? lv_obj_align(_obj[i], NULL, LV_ALIGN_CENTER, 0, 0) : lv_obj_align(_obj[i], _obj[i - 1], direction ? LV_ALIGN_OUT_BOTTOM_MID : LV_ALIGN_OUT_RIGHT_MID, 0, 0);
-
-            lv_tileview_add_element(_view, _obj[i]);
-            lv_obj_set_click(_obj[i], true);
-            lv_obj_set_event_cb(_obj[i], event_cb);
-        }
-
-        _exit  = lv_imgbtn_create(lv_scr_act(), NULL);
-        lv_imgbtn_set_src(_exit, LV_BTN_STATE_RELEASED, &iexit);
-        lv_imgbtn_set_src(_exit, LV_BTN_STATE_PRESSED, &iexit);
-        lv_imgbtn_set_src(_exit, LV_BTN_STATE_CHECKED_PRESSED, &iexit);
-        lv_imgbtn_set_src(_exit, LV_BTN_STATE_CHECKED_RELEASED, &iexit);
-        lv_obj_align(_exit, NULL, LV_ALIGN_IN_BOTTOM_RIGHT, -20, -20);
-        lv_obj_set_event_cb(_exit, event_cb);
-        lv_obj_set_top(_exit, true);
-    }
-    lv_obj_t *exitBtn() const
-    {
-        return _exit;
-    }
-    lv_obj_t *self() const
-    {
-        return _cont;
-    }
-    void hidden(bool en = true)
-    {
-        lv_obj_set_hidden(_cont, en);
-        lv_obj_set_hidden(_exit, en);
-    }
-    lv_obj_t *obj(int index) const
-    {
-        if (index > _count)return nullptr;
-        return _obj[index];
-    }
-private:
-    lv_obj_t *_cont, *_view, *_exit, * *_obj;
-    lv_point_t *_vp ;
-    int _count = 0;
-};
-
-MenuBar::lv_menu_config_t _cfg[4] = {
-    {.name = "WiFi",  .img = (void *) &wifi, .event_cb = wifi_event_cb},
-    {.name = "Bluetooth",  .img = (void *) &bluetooth, /*.event_cb = bluetooth_event_cb*/},
-    {.name = "Settings",  .img = (void *) &setting, /*.event_cb = setting_event_cb */},
-    {.name = "About",  .img = (void *) &modules, .event_cb = about_event_cb}
-};
-
-
-MenuBar menuBars;
 StatusBar bar;
 
-static void event_handler(lv_obj_t *obj, lv_event_t event)
-{
-    if (event == LV_EVENT_SHORT_CLICKED) {  //!  Event callback Is in here
-        if (obj == menuBtn) {
-            lv_obj_set_hidden(mainBar, true);
-            if (menuBars.self() == nullptr) {
-                menuBars.createMenu(_cfg, sizeof(_cfg) / sizeof(_cfg[0]), view_event_handler);
-                lv_obj_align(menuBars.self(), bar.self(), LV_ALIGN_OUT_BOTTOM_MID, 0, 0);
+TileDesc_t tileDesc[] = {{0, createOriginalFace}, {1, createHomerFace},
+	                 {0, createWiFi}, {1, createWiFiSwitches},
+	                 {0, createAbout}, {1, createAboutInfo}};
 
-            } else {
-                menuBars.hidden(false);
-            }
-        }
+int numDescTiles = sizeof (tileDesc) / sizeof (TileDesc_t);
+
+#define TILE_OFFSET 2  // This value must be the number of columns.
+
+lv_obj_t *tileView;
+lv_point_t *tileMap;
+
+static int32_t lastIdx = 0;
+
+static void tileViewEvent_cb (lv_obj_t * obj, lv_event_t event)
+{
+  log_d ("obj=%p, event=%d: %s", obj, event, decodeEvent (event));
+
+  if(event == LV_EVENT_VALUE_CHANGED)
+  {
+    /*
+    ** The documentation says that this is uint32_t * but I want it signed!
+    */
+    int32_t idx = *((int32_t *)lv_event_get_data ());
+
+    log_i ("tileViewChanged: was=%d, is=%d", lastIdx, idx);
+
+    /*
+    ** Do not remove watch time updates when moving to other features.
+    */
+    if (!((lastIdx == 0) && (tileDesc[idx].row == 1)))
+    {
+      if (tileDesc[lastIdx].onExit != nullptr) tileDesc[lastIdx].onExit (lastIdx);
     }
+    else
+    {
+      log_d ("onExit for idx=%d ignored", lastIdx);
+    }
+
+    /*
+    ** Do not add watch time updates when moving from other features.
+    */
+    if (!((idx == 0) && (tileDesc[lastIdx].row == 1)))
+    {
+      if (tileDesc[idx].onEntry != nullptr) tileDesc[idx].onEntry (idx);
+    }
+    else
+    {
+      log_d ("onEntry for idx=%d ignored", idx);
+    }
+
+    /*
+    ** Ensure that movement between tile rows only occurs in column zero.
+    */
+    if ((tileMap[idx].x == 0) && (tileMap[lastIdx].y != tileMap[idx].y))
+    {
+      uint32_t i;
+
+      for (i = lastIdx + 1; tileMap[lastIdx].y == tileMap[i].y; i++)
+      {
+        tileMap[i].x += TILE_OFFSET;
+      }
+
+      for (i = idx + 1; tileMap[idx].y == tileMap[i].y; i++)
+      {
+        tileMap[i].x -= TILE_OFFSET;
+      }
+
+      /*
+      ** Refresh the valid positions to force the tile to re-evaluate
+      ** valid tile movements.
+      */
+      lv_tileview_set_valid_positions (obj, tileMap, numDescTiles);
+    }
+
+    lastIdx = idx;
+  }
+}
+
+static void watchFaceEvent_cb (lv_obj_t * obj, lv_event_t event)
+{
+  log_d ("obj=%p, event=%d: %s", obj, event, decodeEvent (event));
+
+  if ((event == LV_EVENT_LONG_PRESSED) &&
+           (tileDesc[lastIdx].row == 0) &&
+           (tileDesc[lastIdx].col != 0))
+  {
+    /*
+    ** A new watch face has been selected.
+    */
+    log_i ("New watch face selected idx=%d, col=%d", lastIdx, tileDesc[lastIdx].col);
+
+    /*
+     * In preview mode, both the default face (idx == 0) and the currently viewed face have
+     * task updates registered - remove the preview ready for the face shuffle.
+     */
+    tileDesc[lastIdx].onExit (lastIdx);
+    
+    /*
+    ** Alter the tileView to reflect the new selection.
+    */
+    lv_obj_set_pos (tileDesc[0].tile, LV_HOR_RES * tileDesc[lastIdx].col,
+                    LV_VER_RES * tileDesc[lastIdx].row);
+
+    lv_obj_set_pos (tileDesc[lastIdx].tile, 0, 0);
+
+    /*
+    ** row & col remain with the array index position and create is not
+    ** required during run-time.
+    */
+    int (*tfunc)(int) = tileDesc[lastIdx].onEntry;
+    tileDesc[lastIdx].onEntry = tileDesc[0].onEntry;
+    tileDesc[0].onEntry = tfunc;
+
+    tfunc = tileDesc[lastIdx].onExit;
+    tileDesc[lastIdx].onExit = tileDesc[0].onExit;
+    tileDesc[0].onExit = tfunc;
+
+    tfunc = tileDesc[lastIdx].onUpdate;
+    tileDesc[lastIdx].onUpdate = tileDesc[0].onUpdate;
+    tileDesc[0].onUpdate = tfunc;
+
+    lv_obj_t *tobj = tileDesc[lastIdx].tile;
+    tileDesc[lastIdx].tile = tileDesc[0].tile;
+    tileDesc[0].tile = tobj;
+
+    void *tdata = tileDesc[lastIdx].data;
+    tileDesc[lastIdx].data = tileDesc[0].data;
+    tileDesc[0].data = tdata;
+
+    /*
+    ** Finally, set the new tile position to 0,0 (this will cause an
+    ** LV_EVENT_VALUE_CHANGED to be generated).
+    */
+    lv_tileview_set_tile_act (tileView, 0, 0, LV_ANIM_OFF);
+    
+    TTGOClass *ttgo = TTGOClass::getWatch();
+    ttgo->shake ();
+  }
 }
 
 void setupGui()
@@ -408,6 +424,8 @@ void setupGui()
     //lv_log_register_print_cb((lv_log_print_g_cb_t)my_log_cb);
 
     lv_obj_t *scr = lv_scr_act();
+
+    log_d ("called");
     
     lv_style_init(&settingStyle);
     lv_style_set_radius(&settingStyle, LV_OBJ_PART_MAIN, 0);
@@ -434,11 +452,6 @@ void setupGui()
     lv_obj_set_pos(torchLabel, 0, 30);
     lv_obj_t *l = lv_label_create (torchLabel, NULL);
 
-    /*
-     * I have a suspicion that this scroll mode eats battery!
-     */
-    //lv_label_set_long_mode(l, LV_LABEL_LONG_SROLL_CIRC);    // LVGL spelling mistake!
-    //lv_obj_set_width(l, 100);
     lv_label_set_text(l, "  TORCH MODE  ");
     lv_obj_align(l, NULL, LV_ALIGN_CENTER, 0, 0);
     lv_obj_set_user_data(torchLabel, l);
@@ -448,18 +461,103 @@ void setupGui()
      */
     //lv_obj_set_hidden (l, true);
 
-//Maybe I should just hide the torchLabel then I wouldn't have to jump through hoops?????
+    lv_obj_t *img_bin = lv_img_create (scr, NULL);
+    lv_img_set_src (img_bin, &bg2);
+    lv_obj_set_size (img_bin, LV_HOR_RES, LV_VER_RES);
+    lv_obj_align (img_bin, NULL, LV_ALIGN_CENTER, 0, 0);
 
-    //Create wallpaper
-    void *images[] = {(void *) &bg, (void *) &bg1, (void *) &bg2, (void *) &bg3 };
-    lv_obj_t *img_bin = lv_img_create(scr, NULL);  /*Create an image object*/
-    srand((int)time(0));
-    int r = rand() % 4;
-    lv_img_set_src(img_bin, images[r]);
-    lv_obj_align(img_bin, NULL, LV_ALIGN_CENTER, 0, 0);
+    tileView = lv_tileview_create (img_bin, NULL);
+    lv_obj_add_style (tileView, LV_OBJ_PART_MAIN, &settingStyle);
+    lv_obj_align (tileView, NULL, LV_ALIGN_CENTER, 0, 0);
+    
+    lv_tileview_set_edge_flash (tileView, true);
+    lv_page_set_scrlbar_mode(tileView, LV_SCRLBAR_MODE_OFF);
+    
+    tileMap  = (lv_point_t *)calloc (numDescTiles, sizeof (lv_point_t));
+
+    int row = -1;
+
+    for (int idx = 0; idx < numDescTiles; idx++ )
+    {
+      if (tileDesc[idx].col == 0)
+      {
+        row++;
+      }
+
+      log_d ("- for loop row=%d col=%d idx=%d", row, tileDesc[idx].col, idx);
+
+      tileDesc[idx].tile = lv_cont_create (tileView, NULL);
+      lv_obj_set_size (tileDesc[idx].tile, LV_HOR_RES, LV_VER_RES);
+      lv_obj_add_style (tileDesc[idx].tile, LV_OBJ_PART_MAIN, &settingStyle);
+      lv_obj_set_pos (tileDesc[idx].tile, LV_HOR_RES * tileDesc[idx].col, LV_VER_RES * row); 
+
+      tileDesc[idx].row = row;
+
+      lv_tileview_add_element (tileView, tileDesc[idx].tile);
+
+      tileDesc[idx].onEntry = nullptr;
+      tileDesc[idx].onExit  = nullptr;
+
+      tileDesc[idx].create (idx);
+
+      /*
+      ** Only enable movement for column zero and the watch face row.
+      */
+      tileMap[idx].x = tileDesc[idx].col + ((row == 0) || (tileDesc[idx].col == 0) ? 0 : TILE_OFFSET);
+
+      tileMap[idx].y = row;
+    }
+
+    lv_tileview_set_valid_positions (tileView, tileMap, numDescTiles);
+
+    lv_obj_set_event_cb (tileView, tileViewEvent_cb);
+
+    lv_tileview_set_tile_act (tileView, 0, 0, LV_ANIM_OFF);
+}
+
+typedef struct
+{
+  lv_task_t *timeTask;
+  lv_task_t *battTask;
+  lv_obj_t *timeLabel;
+  lv_obj_t *dateLabel;
+} OriginalFaceData;
+
+static int onEntryOriginalFace (int idx)
+{
+  OriginalFaceData *ofd = (OriginalFaceData *)(tileDesc[idx].data);
+
+  log_d ("idx=%d", idx);
+
+  if (ofd->timeTask == nullptr)
+  {
+    ofd->timeTask = lv_task_create(lv_update_task, 1000, LV_TASK_PRIO_LOWEST, (void *)idx);
+  }
+}
+
+static int onExitOriginalFace (int idx)
+{
+  OriginalFaceData *ofd = (OriginalFaceData *)(tileDesc[idx].data);
+
+  log_d ("idx=%d", idx);
+
+  if (ofd->timeTask != nullptr)
+  {
+    lv_task_del (ofd->timeTask);
+    ofd->timeTask = nullptr;
+  }
+}
+
+static int createOriginalFace (int idx)
+{
+    lv_obj_t *parentObj = tileDesc[idx].tile;
+    lv_obj_t *timeLabel;
+    lv_obj_t *dateLabel;
+
+    log_d ("idx=%d", idx);
 
     //! bar
-    bar.createIcons(scr);
+    bar.createIcons(parentObj);
     updateBatteryLevel();
     lv_icon_battery_t icon = LV_ICON_CALCULATION;
 
@@ -468,6 +566,7 @@ void setupGui()
     if (ttgo->power->isChargeing()) {
         icon = LV_ICON_CHARGE;
     }
+
     updateBatteryIcon(icon);
 
     //! main
@@ -479,12 +578,11 @@ void setupGui()
     lv_style_set_text_color(&mainStyle, LV_OBJ_PART_MAIN, LV_COLOR_WHITE);
     lv_style_set_image_recolor(&mainStyle, LV_OBJ_PART_MAIN, LV_COLOR_WHITE);
 
-    mainBar = lv_cont_create(scr, NULL);
+    mainBar = lv_cont_create(parentObj, NULL);
     lv_obj_set_size(mainBar,  LV_HOR_RES, LV_VER_RES - bar.height());
     lv_obj_add_style(mainBar, LV_OBJ_PART_MAIN, &mainStyle);
     
     lv_obj_align(mainBar, bar.self(), LV_ALIGN_OUT_BOTTOM_MID, 0, 0);
-
 
     //! Time
     static lv_style_t timeStyle;
@@ -499,32 +597,27 @@ void setupGui()
     dateLabel = lv_label_create(mainBar, NULL);
     lv_obj_add_style(dateLabel, LV_OBJ_PART_MAIN, &dateStyle);
     //lv_label_set_long_mode(dateLabel, LV_LABEL_LONG_SROLL_CIRC);
-    updateTime();
     
 #ifdef DEBUG_EVENTS    
     lv_obj_set_gesture_parent(mainBar,0);
     lv_obj_set_event_cb(mainBar, my_test_event_cb);
-    //lv_obj_set_event_cb(lv_scr_act(), my_test_event_cb);
 #endif
 
-    //! menu
-    static lv_style_t style_pr;
-    lv_style_init(&style_pr);
-    lv_style_set_image_recolor(&style_pr, LV_OBJ_PART_MAIN, LV_COLOR_BLACK);
-    lv_style_set_text_color(&style_pr, LV_OBJ_PART_MAIN, lv_color_hex3(0xaaa));
+    lv_tileview_add_element (tileView, mainBar);
 
-    menuBtn = lv_imgbtn_create(mainBar, NULL);
-    lv_imgbtn_set_src(menuBtn, LV_BTN_STATE_RELEASED, &menu);
-    lv_imgbtn_set_src(menuBtn, LV_BTN_STATE_PRESSED, &menu);
-    lv_imgbtn_set_src(menuBtn, LV_BTN_STATE_CHECKED_RELEASED, &menu);
-    lv_imgbtn_set_src(menuBtn, LV_BTN_STATE_CHECKED_PRESSED, &menu);
-    lv_obj_add_style(menuBtn, LV_OBJ_PART_MAIN, &style_pr);
-    
-    lv_obj_align(menuBtn, mainBar, LV_ALIGN_OUT_BOTTOM_MID, 0, -70);
-    lv_obj_set_event_cb(menuBtn, event_handler);
+    lv_obj_set_event_cb (mainBar, watchFaceEvent_cb);
 
-    lv_task_create(lv_update_task, 1000, LV_TASK_PRIO_LOWEST, NULL);
-    lv_task_create(lv_battery_task, 30000, LV_TASK_PRIO_LOWEST, NULL);
+    tileDesc[idx].onEntry  = onEntryOriginalFace;
+    tileDesc[idx].onExit   = onExitOriginalFace;
+    tileDesc[idx].onUpdate = updateOriginalFace;
+
+    tileDesc[idx].data = malloc (sizeof (OriginalFaceData));
+
+    ((OriginalFaceData *)(tileDesc[idx].data))->timeLabel = timeLabel;
+    ((OriginalFaceData *)(tileDesc[idx].data))->dateLabel = dateLabel;
+    ((OriginalFaceData *)(tileDesc[idx].data))->timeTask = nullptr;
+
+    updateTime();
 }
 
 void updateStepCounter(uint32_t counter)
@@ -532,13 +625,15 @@ void updateStepCounter(uint32_t counter)
     bar.setStepCounter(counter);
 }
 
-void updateTime()
+static int updateOriginalFace (int idx)
 {
+    OriginalFaceData *ofd = (OriginalFaceData *)(tileDesc[idx].data);
+    lv_obj_t *timeLabel = ofd->timeLabel;
+    lv_obj_t *dateLabel = ofd->dateLabel;
     time_t now;
     struct tm  info;
     char buf[64];
     TTGOClass *ttgo = TTGOClass::getWatch();
-    extern unsigned int screenTimeout;
     
     time(&now);
     localtime_r(&now, &info);
@@ -549,7 +644,7 @@ void updateTime()
     lv_label_set_text (dateLabel, buf);
     lv_obj_align(dateLabel, NULL, LV_ALIGN_CENTER, 0, 0);
 
-    if (screenTimeout == DEFAULT_SCREEN_TIMEOUT)
+    if (screenTimeout == defaultScreenTimeout)
     {
       if ((info.tm_hour > 22) || (info.tm_hour < 8))
       {
@@ -562,6 +657,11 @@ void updateTime()
     }
 }
 
+void updateTime()
+{
+  tileDesc[0].onUpdate (0);
+}
+
 void torchOn ()
 {
   //lv_obj_set_hidden ((lv_obj_t*)lv_obj_get_user_data (torchLabel), false);
@@ -570,9 +670,7 @@ void torchOn ()
 
 void torchOff ()
 {
-  extern unsigned int screenTimeout;
-  
-  screenTimeout = DEFAULT_SCREEN_TIMEOUT;
+  screenTimeout = defaultScreenTimeout = DEFAULT_SCREEN_TIMEOUT;
   lv_obj_move_background(torchLabel);
   //lv_obj_set_hidden ((lv_obj_t*)lv_obj_get_user_data (torchLabel), true);
   updateTime ();
@@ -602,7 +700,9 @@ void updateBatteryIcon(lv_icon_battery_t icon)
 
 static void lv_update_task(struct _lv_task_t *data)
 {
-    updateTime();
+  log_d ("update %d", (int)(data->user_data));
+
+  tileDesc[(int)(data->user_data)].onUpdate ((int)(data->user_data));
 }
 
 static void lv_battery_task(struct _lv_task_t *data)
@@ -610,25 +710,196 @@ static void lv_battery_task(struct _lv_task_t *data)
     updateBatteryLevel();
 }
 
-static void view_event_handler(lv_obj_t *obj, lv_event_t event)
+typedef struct
 {
-    int size = sizeof(_cfg) / sizeof(_cfg[0]);
-    if (event == LV_EVENT_SHORT_CLICKED) {
-        if (obj == menuBars.exitBtn()) {
-            menuBars.hidden();
-            lv_obj_set_hidden(mainBar, false);
-            return;
-        }
-        for (int i = 0; i < size; i++) {
-            if (obj == menuBars.obj(i)) {
-                if (_cfg[i].event_cb != nullptr) {
-                    menuBars.hidden();
-                    _cfg[i].event_cb();
-                }
-                return;
-            }
-        }
+  lv_task_t *timeTask;
+  lv_obj_t *hourHand;
+  lv_obj_t *minHand;
+  lv_obj_t *secHand;
+  lv_obj_t *hourShadow;
+  lv_obj_t *minShadow;
+  lv_obj_t *secShadow;
+  lv_obj_t *leftEye;
+  lv_obj_t *rightEye;
+} HomerFaceData_t;
+
+static int updateHomerFace (int idx)
+{
+  time_t now;
+  struct tm info;
+  HomerFaceData_t *hfd = (HomerFaceData_t *)(tileDesc[idx].data);
+  static int lastMin = 61;
+  
+  log_d ("idx=%d", idx);
+
+  time (&now);
+  localtime_r (&now, &info);
+
+  int sec  = 60 * info.tm_sec;
+
+  lv_img_set_angle (hfd->leftEye, sec);
+  lv_img_set_angle (hfd->rightEye, sec);
+
+  if (info.tm_min != lastMin)
+  {
+    lastMin = info.tm_min;
+    
+    int hour = (300 * (info.tm_hour % 12)) + (5 * lastMin);
+    int min  = 60 * lastMin;
+
+    lv_img_set_angle (hfd->minShadow, min);
+    lv_img_set_angle (hfd->minHand, min);
+
+    lv_img_set_angle (hfd->hourShadow, hour);
+    lv_img_set_angle (hfd->hourHand, hour);
+  }
+
+  lv_img_set_angle (hfd->secShadow, sec);
+  lv_img_set_angle (hfd->secHand, sec);
+}
+
+static int onEntryHomerFace (int idx)
+{
+  HomerFaceData_t *hfd = (HomerFaceData_t *)(tileDesc[idx].data);
+
+  log_d ("idx=%d", idx);
+
+  screenTimeout = defaultScreenTimeout = DEFAULT_SCREEN_TIMEOUT * 5;
+  defaultCpuFrequency = CPU_FREQ_MAX;
+  setCpuFrequencyMhz (defaultCpuFrequency);
+
+  if (hfd->timeTask == nullptr)
+  {
+    hfd->timeTask = lv_task_create (lv_update_task, 1000, LV_TASK_PRIO_LOWEST, (void *)idx);
+  }
+}
+
+static int onExitHomerFace (int idx)
+{
+  HomerFaceData_t *hfd = (HomerFaceData_t *)(tileDesc[idx].data);
+
+  log_d ("idx=%d", idx);
+
+  if (hfd->timeTask != nullptr)
+  {
+    lv_task_del (hfd->timeTask);
+    hfd->timeTask = nullptr;
+  }
+  
+  screenTimeout = defaultScreenTimeout = DEFAULT_SCREEN_TIMEOUT;
+  defaultCpuFrequency = CPU_FREQ_NORM;
+}
+
+static int createHomerFace (int idx)
+{
+  lv_obj_t *parentObj = tileDesc[idx].tile;
+  lv_obj_t *canvas = lv_canvas_create (parentObj, NULL);
+  lv_color_t *cbuf = (lv_color_t *)ps_malloc(LV_CANVAS_BUF_SIZE_TRUE_COLOR_ALPHA(240, 240) * sizeof (lv_color_t));
+
+  memcpy (cbuf, homerFace.data, homerFace.data_size);
+  
+  lv_canvas_set_buffer (canvas, cbuf, 240, 240, LV_IMG_CF_TRUE_COLOR_ALPHA);
+  
+  lv_draw_line_dsc_t ticks;
+  lv_draw_line_dsc_init (&ticks);
+  ticks.opa = LV_OPA_100;
+  ticks.color = LV_COLOR_WHITE;
+
+  lv_point_t line[2];
+  
+  for (int i = 0; i < 60; i++)
+  {
+    int bot;
+    float sx = cos(((i * 6) - 90) * 0.0174532925);
+    float sy = sin(((i * 6) - 90) * 0.0174532925);
+    
+    line[0].x = sx * 117 + 120;
+    line[0].y = sy * 117 + 120;
+
+    if ((i % 15) == 0)
+    {
+      bot = 97;
+      ticks.width = 6;
     }
+    else if ((i % 5) == 0)
+    {
+      bot = 107;
+      ticks.width = 4;
+    }
+    else
+    {
+      bot = 112;
+      ticks.width = 2;
+    }
+    
+    line[1].x = sx * bot + 120;
+    line[1].y = sy * bot + 120;
+    
+    lv_canvas_draw_line (canvas, line, 2, &ticks);
+  }
+  
+  lv_obj_align (canvas, parentObj, LV_ALIGN_CENTER, 0, 0);
+
+  lv_obj_set_event_cb (parentObj, watchFaceEvent_cb);
+
+  tileDesc[idx].onEntry  = onEntryHomerFace;
+  tileDesc[idx].onExit   = onExitHomerFace;
+  tileDesc[idx].onUpdate = updateHomerFace;
+
+  tileDesc[idx].data = malloc (sizeof (HomerFaceData_t));
+
+  HomerFaceData_t *hfd = (HomerFaceData_t *)(tileDesc[idx].data);
+
+  hfd->leftEye = lv_img_create (parentObj, NULL);
+  hfd->rightEye = lv_img_create (parentObj, NULL);
+
+  hfd->minShadow  = lv_img_create (parentObj, NULL);
+  hfd->minHand  = lv_img_create (parentObj, NULL);
+
+  hfd->hourShadow = lv_img_create (parentObj, NULL);
+  hfd->hourHand = lv_img_create (parentObj, NULL);
+
+  hfd->secShadow  = lv_img_create (parentObj, NULL);
+  hfd->secHand  = lv_img_create (parentObj, NULL);
+
+  lv_img_set_src (hfd->leftEye, &eye);
+  lv_img_set_src (hfd->rightEye, &eye);
+
+  lv_img_set_src (hfd->hourShadow, &hourHand); lv_img_set_pivot (hfd->hourShadow, 7,  77);
+  lv_img_set_src (hfd->minShadow,  &minHand);  lv_img_set_pivot (hfd->minShadow,  7, 105);
+  lv_img_set_src (hfd->secShadow,  &secHand);  lv_img_set_pivot (hfd->secShadow, 22, 90);
+
+  lv_img_set_src (hfd->hourHand, &hourHand); lv_img_set_pivot (hfd->hourHand, 7,  77);
+  lv_img_set_src (hfd->minHand,  &minHand);  lv_img_set_pivot (hfd->minHand,  7, 105);
+  lv_img_set_src (hfd->secHand,  &secHand);  lv_img_set_pivot (hfd->secHand, 22, 90);
+
+  lv_obj_align (hfd->leftEye, parentObj, LV_ALIGN_CENTER, -30, -28);
+  lv_obj_align (hfd->rightEye, parentObj, LV_ALIGN_CENTER, 30, -28);
+
+  lv_obj_align (hfd->hourShadow, parentObj, LV_ALIGN_CENTER, 0, -32);
+  lv_obj_align (hfd->minShadow,  parentObj, LV_ALIGN_CENTER, 0, -41);
+  lv_obj_align (hfd->secShadow,  parentObj, LV_ALIGN_CENTER, 3, -15);
+
+  lv_obj_align (hfd->hourHand, parentObj, LV_ALIGN_CENTER, 1, -40);
+  lv_obj_align (hfd->minHand,  parentObj, LV_ALIGN_CENTER, 1, -49);
+  lv_obj_align (hfd->secHand,  parentObj, LV_ALIGN_CENTER, 4, -26);
+
+  static lv_style_t shadowStyle;
+
+  lv_style_init (&shadowStyle);
+  lv_style_set_radius (&shadowStyle, LV_OBJ_PART_MAIN, 0);
+  lv_style_set_image_recolor (&shadowStyle, LV_STATE_DEFAULT, LV_COLOR_BLACK);
+  lv_style_set_image_recolor_opa (&shadowStyle, LV_STATE_DEFAULT, LV_OPA_100);
+  lv_style_set_image_opa (&shadowStyle, LV_STATE_DEFAULT, 63);  // LV_OPA_25ish!
+  lv_style_set_border_width (&shadowStyle, LV_OBJ_PART_MAIN, 0);
+
+  lv_obj_add_style (hfd->hourShadow, LV_IMG_PART_MAIN, &shadowStyle);
+  lv_obj_add_style (hfd->minShadow, LV_IMG_PART_MAIN, &shadowStyle);
+  lv_obj_add_style (hfd->secShadow, LV_IMG_PART_MAIN, &shadowStyle);
+
+  hfd->timeTask = nullptr;
+
+  updateHomerFace (idx);
 }
 
 /*****************************************************************
@@ -662,6 +933,11 @@ public:
     void create(lv_obj_t *parent =  nullptr)
     {
         static lv_style_t kbStyle;
+
+	int height = LV_VER_RES;
+
+	log_d ("parent=%p", parent);
+
         lv_style_init(&kbStyle);
         lv_style_set_radius(&kbStyle, LV_OBJ_PART_MAIN, 0);
         lv_style_set_bg_color(&kbStyle, LV_OBJ_PART_MAIN, LV_COLOR_GRAY);
@@ -675,14 +951,14 @@ public:
         }
 
         _kbCont = lv_cont_create(parent, NULL);
-        lv_obj_set_size(_kbCont, LV_HOR_RES, LV_VER_RES - 30);
+        lv_obj_set_size(_kbCont, LV_HOR_RES, height);
         lv_obj_set_pos(_kbCont, 0, 30);
         lv_obj_add_style(_kbCont, LV_OBJ_PART_MAIN, &kbStyle);
 
 
         _kbPage = lv_page_create(_kbCont, NULL);
         lv_page_set_scrlbar_mode(_kbPage, LV_SCROLLBAR_MODE_OFF);
-        lv_obj_set_size (_kbPage, LV_HOR_RES, LV_VER_RES - 30 - 20);
+        lv_obj_set_size (_kbPage, LV_HOR_RES, height - 20);
         lv_obj_set_pos(_kbPage, 0, 20);
         lv_page_set_scrl_width(_kbPage,480);
         lv_page_set_scrl_height(_kbPage,190);
@@ -697,7 +973,7 @@ public:
 
         lv_obj_t *kb = lv_keyboard_create(_kbPage, NULL);
         lv_obj_set_pos(ta, 0, 0);
-        lv_obj_set_height(kb, LV_VER_RES - 30 - 20);
+        lv_obj_set_height(kb, height - 20);
         lv_obj_set_width(kb, 480);
         lv_obj_move_foreground (_kbCont);
 	      lv_obj_set_pos (kb, 0, 0);
@@ -713,7 +989,8 @@ public:
 
     void align(const lv_obj_t *base, lv_align_t align, lv_coord_t x = 0, lv_coord_t y = 0)
     {
-        lv_obj_align(_kbCont, base, align, x, y);
+        lv_obj_set_pos (_kbCont, 0, 0);
+	lv_obj_move_foreground (_kbCont);
     }
 
     static void __kb_event_cb(lv_obj_t *kb, lv_event_t event)
@@ -815,13 +1092,16 @@ public:
 
         if (parent == nullptr) {
             parent = lv_scr_act();
-        }
-        _exit_cb = cb;
 
-        _swCont = lv_cont_create(parent, NULL);
-        lv_obj_set_size(_swCont, LV_HOR_RES, LV_VER_RES - 30);
-        lv_obj_align(_swCont, NULL, LV_ALIGN_CENTER, 0, 0);
-        lv_obj_add_style(_swCont, LV_OBJ_PART_MAIN, &swlStyle);
+            _swCont = lv_cont_create(parent, NULL);
+            lv_obj_set_size(_swCont, LV_HOR_RES, LV_VER_RES - 30);
+            lv_obj_align(_swCont, NULL, LV_ALIGN_CENTER, 0, 0);
+            lv_obj_add_style(_swCont, LV_OBJ_PART_MAIN, &swlStyle);
+        }
+        else
+	    _swCont = parent;
+
+        _exit_cb = cb;
 
         _count = count;
         _sw = new lv_obj_t *[count];
@@ -845,15 +1125,6 @@ public:
             prev = la1;
         }
 
-        _exitBtn = lv_imgbtn_create(_swCont, NULL);
-        lv_imgbtn_set_src(_exitBtn, LV_BTN_STATE_RELEASED, &iexit);
-        lv_imgbtn_set_src(_exitBtn, LV_BTN_STATE_PRESSED, &iexit);
-        lv_imgbtn_set_src(_exitBtn, LV_BTN_STATE_CHECKED_RELEASED, &iexit);
-        lv_imgbtn_set_src(_exitBtn, LV_BTN_STATE_CHECKED_PRESSED, &iexit);
-        lv_obj_set_click(_exitBtn, true);
-        lv_obj_align(_exitBtn, _swCont, LV_ALIGN_IN_BOTTOM_MID, 0, -5);
-        lv_obj_set_event_cb(_exitBtn, __switch_event_cb);
-
         _switch = this;
     }
 
@@ -869,14 +1140,7 @@ public:
 
     static void __switch_event_cb(lv_obj_t *obj, lv_event_t event)
     {
-        if (event == LV_EVENT_SHORT_CLICKED) {
-            if (obj == _switch->_exitBtn) {
-                if ( _switch->_exit_cb != nullptr) {
-                    _switch->_exit_cb();
-                    return;
-                }
-            }
-        }
+        log_d ("obj=%p, event=%d: %s", obj, event, decodeEvent (event));
 
         if (event == LV_EVENT_SHORT_CLICKED) {
             for (int i = 0; i < _switch->_count ; i++) {
@@ -942,6 +1206,8 @@ public:
     }
     void create(lv_obj_t *parent = nullptr)
     {
+        log_d ("Preload parent=%p", parent);
+
         if (parent == nullptr) {
             parent = lv_scr_act();
         }
@@ -978,7 +1244,8 @@ public:
     }
     void align(const lv_obj_t *base, lv_align_t align, lv_coord_t x = 0, lv_coord_t y = 0)
     {
-        lv_obj_align(_preloadCont, base, align, x, y);
+        lv_obj_move_foreground (_preloadCont);
+        lv_obj_set_pos(_preloadCont, 0, 0);
     }
 
     void hidden(bool en = true)
@@ -1012,6 +1279,8 @@ public:
     }
     void create(lv_obj_t *parent = nullptr)
     {
+        log_d ("List parent=%p", parent);
+
         if (parent == nullptr) {
             parent = lv_scr_act();
         }
@@ -1042,7 +1311,8 @@ public:
 
     void align(const lv_obj_t *base, lv_align_t align, lv_coord_t x = 0, lv_coord_t y = 0)
     {
-        lv_obj_align(_listCont, base, align, x, y);
+        lv_obj_set_pos (_listCont, 0, 0);
+        lv_obj_move_foreground (_listCont);
     }
 
     void hidden(bool en = true)
@@ -1180,6 +1450,8 @@ static char ssid[64], password[64];
  */
 void wifi_connect_status(bool result)
 {
+    log_d ("result=%d", result);
+
     if (gTicker != nullptr) {
         delete gTicker;
         gTicker = nullptr;
@@ -1187,10 +1459,6 @@ void wifi_connect_status(bool result)
     if (kb != nullptr) {
         delete kb;
         kb = nullptr;
-    }
-    if (sw != nullptr) {
-        delete sw;
-        sw = nullptr;
     }
     if (pl != nullptr) {
         delete pl;
@@ -1201,12 +1469,13 @@ void wifi_connect_status(bool result)
     } else {
         bar.hidden(LV_STATUS_BAR_WIFI);
     }
-    menuBars.hidden(false);
 }
 
 
 void wifi_kb_event_cb(Keyboard::kb_event_t event)
 {
+    log_d ("keyboardEvent=%d", event);
+
     if (event == 0) {
         kb->hidden();
         Serial.println(kb->getText());
@@ -1221,12 +1490,9 @@ void wifi_kb_event_cb(Keyboard::kb_event_t event)
         });
     } else if (event == 1) {
         delete kb;
-        delete sw;
         delete pl;
         pl = nullptr;
         kb = nullptr;
-        sw = nullptr;
-        menuBars.hidden(false);
     }
 }
 
@@ -1236,6 +1502,9 @@ static void wifi_sync_mbox_cb(lv_task_t *t)
     bool ret = false;
     static int retry = 0;
     configTzTime(RTC_TIME_ZONE, "pool.ntp.org");
+
+    log_d ("task=%0", t);
+
     while (1) {
         ret = getLocalTime(&timeinfo);
         if (!ret) {
@@ -1271,7 +1540,6 @@ static void wifi_sync_mbox_cb(lv_task_t *t)
                     }
                     delete mbox;
                     mbox = nullptr;
-                    sw->hidden(false);
                 }
             });
             mbox->setBtn(btns);
@@ -1283,10 +1551,13 @@ static void wifi_sync_mbox_cb(lv_task_t *t)
 
 void wifi_sw_event_cb(uint8_t index, bool en)
 {
+    log_d ("index=%d, en=%d", index, en);
+
     switch (index) {
     case 0:
         if (en) {
-            setCpuFrequencyMhz(CPU_FREQ_WIFI);
+            defaultCpuFrequency = CPU_FREQ_MEDIUM;
+            setCpuFrequencyMhz (defaultCpuFrequency);
             WiFi.begin();
         } else {
             WiFi.disconnect();
@@ -1294,14 +1565,18 @@ void wifi_sw_event_cb(uint8_t index, bool en)
         }
         break;
     case 1:
-        sw->hidden();
+      if (en)
+      {
         pl = new Preload;
         pl->create();
-        pl->align(bar.self(), LV_ALIGN_OUT_BOTTOM_MID);
+        pl->align (lv_scr_act(), LV_ALIGN_OUT_BOTTOM_MID);
         WiFi.disconnect();
         WiFi.scanNetworks(true);
+      }
         break;
     case 2:
+      if (en)
+      {
         if (!WiFi.isConnected()) {
             //TODO pop-up window
             Serial.println("WiFi is not connected");
@@ -1313,10 +1588,10 @@ void wifi_sw_event_cb(uint8_t index, bool en)
             }
             task = new Task;
             task->create(wifi_sync_mbox_cb);
-            sw->hidden();
             pl = new Preload;
             pl->create();
-            pl->align(bar.self(), LV_ALIGN_OUT_BOTTOM_MID);
+            pl->align (lv_scr_act(), LV_ALIGN_OUT_BOTTOM_MID);
+         }
         }
         break;
     default:
@@ -1326,12 +1601,14 @@ void wifi_sw_event_cb(uint8_t index, bool en)
 
 void wifi_list_cb(const char *txt)
 {
+    log_d ("txt=%s", txt);
+
     strlcpy(ssid, txt, sizeof(ssid));
     delete list;
     list = nullptr;
     kb = new Keyboard;
     kb->create();
-    kb->align(bar.self(), LV_ALIGN_OUT_BOTTOM_MID);
+    kb->align (lv_scr_act(), LV_ALIGN_OUT_BOTTOM_MID);
     kb->setKeyboardEvent(wifi_kb_event_cb);
 }
 
@@ -1341,126 +1618,58 @@ void wifi_list_add(const char *ssid)
         pl->hidden();
         list = new List;
         list->create();
-        list->align(bar.self(), LV_ALIGN_OUT_BOTTOM_MID);
+        list->align (lv_scr_act(), LV_ALIGN_OUT_BOTTOM_MID);
         list->setListCb(wifi_list_cb);
     }
     list->add(ssid);
 }
 
-
-static void wifi_event_cb()
+int createRowTitle (lv_obj_t *parent, const lv_img_dsc_t *image, char *name)
 {
+  lv_obj_t *img = lv_img_create (parent, NULL);
+
+  lv_img_set_src (img, image);
+
+  lv_obj_align(img, parent, LV_ALIGN_CENTER, 0, 0);
+
+  lv_obj_t *label = lv_label_create (parent, NULL);
+
+  lv_label_set_text (label, name);
+
+  lv_obj_align (label, img, LV_ALIGN_OUT_BOTTOM_MID, 0, 0);
+}
+
+int createAbout (int idx)
+{
+  lv_obj_t *parentObj = tileDesc[idx].tile;
+
+  log_d ("idx=%d", idx);
+
+  createRowTitle (parentObj, &modules, "About");
+}
+
+int createWiFi (int idx)
+{
+  lv_obj_t *parentObj = tileDesc[idx].tile;
+
+  log_d ("idx=%d", idx);
+
+  createRowTitle (parentObj, &wifi, "WiFi");
+}
+
+int createWiFiSwitches (int idx)
+{
+  lv_obj_t *parentObj = tileDesc[idx].tile;
+
+  log_d ("idx=%d", idx);
     Switch::switch_cfg_t cfg[3] = {{"Switch", wifi_sw_event_cb}, {"Scan", wifi_sw_event_cb}, {"NTP Sync", wifi_sw_event_cb}};
     sw = new Switch;
-    sw->create(cfg, 3, []() {
-        delete sw;
-        sw = nullptr;
-        menuBars.hidden(false);
-    });
-    sw->align(bar.self(), LV_ALIGN_OUT_BOTTOM_MID);
+    sw->create(cfg, 3,
+	      nullptr,
+        parentObj);
+    sw->align(parentObj, LV_ALIGN_IN_TOP_MID);
     sw->setStatus(0, WiFi.isConnected());
 }
-
-
-static void wifi_destory()
-{
-    Serial.printf("globalIndex:%d\n", globalIndex);
-    switch (globalIndex) {
-    //! wifi management main
-    case 0:
-        menuBars.hidden(false);
-        delete sw;
-        sw = nullptr;
-        break;
-    //! wifi ap list
-    case 1:
-        if (list != nullptr) {
-            delete list;
-            list = nullptr;
-        }
-        if (gTicker != nullptr) {
-            delete gTicker;
-            gTicker = nullptr;
-        }
-        if (kb != nullptr) {
-            delete kb;
-            kb = nullptr;
-        }
-        if (pl != nullptr) {
-            delete pl;
-            pl = nullptr;
-        }
-        sw->hidden(false);
-        break;
-    //! wifi keyboard
-    case 2:
-        if (gTicker != nullptr) {
-            delete gTicker;
-            gTicker = nullptr;
-        }
-        if (kb != nullptr) {
-            delete kb;
-            kb = nullptr;
-        }
-        if (pl != nullptr) {
-            delete pl;
-            pl = nullptr;
-        }
-        sw->hidden(false);
-        break;
-    case 3:
-        break;
-    default:
-        break;
-    }
-    globalIndex--;
-}
-
-/*****************************************************************
- *
- *          !SETTING EVENT
- *
- */
-static void setting_event_cb()
-{
-
-
-}
-
-/*****************************************************************
- *
- *          ! LIGHT EVENT
- *
-
-static void light_sw_event_cb(uint8_t index, bool en)
-{
-    //Add lights that need to be controlled
-}
-
-static void light_event_cb()
-{
-    const uint8_t cfg_count = 4;
-    Switch::switch_cfg_t cfg[cfg_count] = {
-        {"light1", light_sw_event_cb},
-        {"light2", light_sw_event_cb},
-        {"light3", light_sw_event_cb},
-        {"light4", light_sw_event_cb},
-    };
-    sw = new Switch;
-    sw->create(cfg, cfg_count, []() {
-        delete sw;
-        sw = nullptr;
-        menuBars.hidden(false);
-    });
-
-    sw->align(bar.self(), LV_ALIGN_OUT_BOTTOM_MID);
-
-    //Initialize switch status
-    for (int i = 0; i < cfg_count; i++) {
-        sw->setStatus(i, 0);
-    }
-}
-*/
 
 /*****************************************************************
  *
@@ -1508,56 +1717,29 @@ static void destory_mbox()
 
 static lv_obj_t *about = nullptr;
 
-static void exit_about(lv_obj_t *obj, lv_event_t event)
+static int onEntryAbout (int idx)
 {
-  if (event == LV_EVENT_SHORT_CLICKED)
-  {
-    lv_obj_set_hidden(about, true);
+  lv_obj_t *parentObj = tileDesc[idx].tile;
+  lv_obj_t *label = (lv_obj_t *)(tileDesc[idx].data);
 
-    menuBars.hidden(false);
-  }
+  log_d ("idx=%d", idx);
+
+  lv_label_set_text_fmt (label, "\nagoodWatch %s\n(C) copyright Alex Goodyear\n%s\n\nCPU speed=%dMHz\nFree mem=%d",
+                         THIS_VERSION_STR, __DATE__, getCpuFrequencyMhz(), esp_get_free_heap_size());
+
+  lv_obj_align (label, parentObj, LV_ALIGN_IN_TOP_MID, 0, 0);
 }
 
-static void about_event_cb()
-{ 
-  static lv_obj_t *_label = nullptr;
+int createAboutInfo (int idx)
+{
+  lv_obj_t *parentObj = tileDesc[idx].tile;
+  lv_obj_t *label = lv_label_create (parentObj, NULL);
 
-  if (about == nullptr)
-  {
-    lv_obj_t *_exitBtn = nullptr;
-    static lv_style_t barStyle;
-    
-    lv_style_init(&barStyle);
-    lv_style_set_radius(&barStyle, LV_OBJ_PART_MAIN, 0);
-    lv_style_set_bg_color(&barStyle, LV_OBJ_PART_MAIN, LV_COLOR_GRAY);
-    lv_style_set_bg_opa(&barStyle, LV_OBJ_PART_MAIN, LV_OPA_20);
-    lv_style_set_border_width(&barStyle, LV_OBJ_PART_MAIN, 0);
-    lv_style_set_text_color(&barStyle, LV_OBJ_PART_MAIN, LV_COLOR_WHITE);
-    lv_style_set_image_recolor(&barStyle, LV_OBJ_PART_MAIN, LV_COLOR_WHITE);
-     
-    about = lv_cont_create (lv_scr_act(), NULL);
-    lv_obj_set_size (about, LV_HOR_RES, LV_VER_RES - 30);
-    lv_obj_set_pos (about, 0, 30);
-    lv_obj_add_style (about, LV_OBJ_PART_MAIN, &barStyle);
+  log_d ("idx=%d", idx);
 
-    _exitBtn = lv_imgbtn_create (about, NULL);
-    lv_imgbtn_set_src(_exitBtn, LV_BTN_STATE_RELEASED, &iexit);
-    lv_imgbtn_set_src(_exitBtn, LV_BTN_STATE_PRESSED, &iexit);
-    lv_imgbtn_set_src(_exitBtn, LV_BTN_STATE_CHECKED_RELEASED, &iexit);
-    lv_imgbtn_set_src(_exitBtn, LV_BTN_STATE_CHECKED_PRESSED, &iexit);
-    lv_obj_set_click(_exitBtn, true);
-    lv_obj_align(_exitBtn, about, LV_ALIGN_IN_BOTTOM_MID, 0, 0);
-    lv_obj_set_event_cb(_exitBtn, exit_about);
+  lv_obj_add_style (label, LV_OBJ_PART_MAIN, &settingStyle);
+  lv_obj_align (label, parentObj, LV_ALIGN_IN_TOP_MID, 0, 0);
 
-    _label = lv_label_create (about, NULL);
-    lv_obj_add_style(_label, LV_OBJ_PART_MAIN, &barStyle);
-  }
-  else
-  {
-    lv_obj_set_hidden(about, false);
-  }
-  
-  lv_label_set_text_fmt (_label, "\nagoodWatch %s\n(C) copyright Alex Goodyear\n%s\n\nCPU speed=%dMHz\nFree mem=%d",
-                           THIS_VERSION_STR, __DATE__, getCpuFrequencyMhz(), esp_get_free_heap_size());
-  lv_obj_align(_label, about, LV_ALIGN_IN_TOP_MID, 0, 0);
+  tileDesc[idx].data = (void *)label;
+  tileDesc[idx].onEntry = onEntryAbout;
 }
