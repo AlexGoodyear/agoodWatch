@@ -25,6 +25,7 @@ Created by Lewis he on October 10, 2019.
 #include "esp_wifi.h"
 #include <WiFi.h>
 #include "gui.h"
+#include "agoodWatch.h"
 
 #define G_EVENT_VBUS_PLUGIN         _BV(0)
 #define G_EVENT_VBUS_REMOVE         _BV(1)
@@ -54,6 +55,7 @@ EventGroupHandle_t isr_group = NULL;
 bool lenergy = false;
 TTGOClass *ttgo;
 lv_icon_battery_t batState = LV_ICON_CALCULATION;
+char buff[512];
 
 unsigned int defaultCpuFrequency = CPU_FREQ_NORM;
 unsigned int defaultScreenTimeout = DEFAULT_SCREEN_TIMEOUT;

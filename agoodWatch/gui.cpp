@@ -18,6 +18,7 @@ Created by Lewis he on October 10, 2019.
 #include <Ticker.h>
 
 #include "homerFace.h"
+#include "lilygoFace.h"
 
 LV_FONT_DECLARE(Ubuntu);
 
@@ -273,7 +274,7 @@ private:
 
 StatusBar bar;
 
-TileDesc_t tileDesc[] = {{0, createOriginalFace}, {1, createHomerFace},
+TileDesc_t tileDesc[] = {{0, createOriginalFace}, {1, createHomerFace}, {2, createLilygoFace},
 	                 {0, createWiFi}, {1, createWiFiSwitches},
 	                 {0, createAbout}, {1, createAboutInfo}};
 
