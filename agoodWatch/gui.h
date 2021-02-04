@@ -73,6 +73,8 @@ typedef struct
   void      *data;
 } TileDesc_t;
 
+extern TileDesc_t tileDesc[];
+
 void setupGui();
 void updateStepCounter(uint32_t counter);
 void updateBatteryIcon(lv_icon_battery_t index);
@@ -83,9 +85,13 @@ void updateTime();
 void torchOn();
 void torchOff();
 
+void watchFaceEvent_cb (lv_obj_t * obj, lv_event_t event);
+
 extern unsigned int screenTimeout;
 extern unsigned int defaultScreenTimeout;
 extern unsigned int defaultCpuFrequency;
+
+void lv_update_task(struct _lv_task_t *data);
 
 extern "C" {
     extern void lv_keyboard_def_event_cb(lv_obj_t * kb, lv_event_t event);

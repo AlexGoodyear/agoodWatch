@@ -2,7 +2,7 @@
 
 ## A TTGO-T-Watch-2020 Arduino sketch
 
-<img src="https://github.com/AlexGoodyear/agoodWatch/blob/master/images/agoodWatchV02.jpg" width="300" /> <img src="https://github.com/AlexGoodyear/agoodWatch/blob/master/images/agoodWatchV06.jpg" width="250" />
+<img src="images/agoodWatchV02.jpg" width="300" /> <img src="images/agoodWatchV06.jpg" width="250" /> <img src="images/LilyGoFace.jpg" width="250" />
 
 ### Installation.
 First ensure that you have installed the [TTGO_TWatch_Library](https://github.com/AlexGoodyear/TTGO_TWatch_Library) into your Arduino/libraries directory. Next put the agoodWatch directory from this repository into your Arduino sketch area.
@@ -31,7 +31,7 @@ To get to the WiFi and About menus you must start from the left most watch face 
 
 This is a "map" of the current screens ...
 ```
-[Face 1]---[Face 2]
+[Face 1]---[Face 2]--[Face 3]
    |
    |
 [Wifi icon]---[Wifi config]    <-- the WiFi list and keyboard password entry
